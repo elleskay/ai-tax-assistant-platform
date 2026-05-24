@@ -4,8 +4,8 @@
   "private": true,
   "description": "TypeScript + AWS platform template",
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
+    "typecheck": "echo 'Template has no app source. Apps add their own typecheck script.'",
+    "lint": "echo 'Template has no app source. Apps add their own lint script.'",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
