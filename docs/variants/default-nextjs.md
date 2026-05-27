@@ -1,104 +1,83 @@
-# Variant: Default Next.js
+# Next.js + AWS serverless (the only variant)
 
-Use this for most apps. The default full-stack web app pattern: Next.js on AWS with managed Postgres.
+This is the platform's happy path. Everything in the platform is designed for this.
 
 ## Stack
 
-- Next.js (App Router) + TypeScript
-- Tailwind + shadcn/ui
-- PostgreSQL via Drizzle ORM (Neon serverless Postgres is the default)
-- Auth.js (NextAuth) for auth
-- Sentry for errors
-- Zod for validation
-- Hosted on AWS via CDK (Lambda + CloudFront via OpenNext is the default, ECS Fargate as alternative)
+| Layer | Choice |
+|---|---|
+| Framework | Next.js (App Router) + TypeScript strict |
+| Styling | Tailwind |
+| Database | Postgres (Neon for serverless connection pooling) |
+| Auth | Auth.js v5 (Credentials or OAuth, JWT sessions) |
+| Validation | Zod on every server action boundary |
+| Build adapter | OpenNext (`@opennextjs/aws`) |
+| Hosting | AWS Lambda (server) + S3 (static assets) + CloudFront (edge) |
+| IaC | AWS CDK |
+| CI/CD | GitHub Actions (provided in `.github/workflows/`) |
 
-## Setup
+## Scaffold
 
 ```bash
-npx create-next-app@latest apps/web --typescript --tailwind --app --eslint
+# Create the Next.js app shell
+npx create-next-app@latest apps/web --typescript --tailwind --app --eslint --use-npm
+
+# Install Auth.js, OpenNext, and the rest
 cd apps/web
-npx shadcn@latest init
-npm install drizzle-orm pg zod next-auth@beta @auth/drizzle-adapter bcryptjs
-npm install -D drizzle-kit @types/pg @types/bcryptjs
+npm install next-auth@beta zod
 npm install @opennextjs/aws
+
+# Pick your data layer
+npm install drizzle-orm pg            # or prisma, or whatever
+npm install -D drizzle-kit @types/pg
 ```
 
-Extend `tsconfig.base.json`:
+## Overlay the platform's reference patterns
 
-```jsonc
-// apps/web/tsconfig.json
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "jsx": "preserve",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler"
-  },
-  "include": ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts"]
-}
+Copy from `apps/_template/` in the platform:
+
+- `next.config.ts` (security headers + Server Actions allowed-origins)
+- `auth.config.ts` (edge-safe NextAuth config)
+- `middleware.ts` (route protection)
+- `components/SignOutButton.tsx` (client-side signout)
+
+See `apps/_template/README.md` for why each one exists.
+
+## CDK setup
+
+```bash
+mkdir -p infra/cdk/app/{bin,lib}
+cp -r <platform>/infra/cdk/constructs infra/cdk/
 ```
 
-## Security baseline
+Write `infra/cdk/app/bin/app.ts` and `infra/cdk/app/lib/web-stack.ts` that instantiate `NextjsServerless`. See `infra/cdk/constructs/README.md` for the exact 5-line usage.
 
-Add to `apps/web/next.config.ts`:
+## Deploy
 
-```ts
-const securityHeaders = [
-  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "X-Frame-Options", value: "DENY" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-];
+The platform's `.github/workflows/deploy.yml` works as-is once you set these GitHub secrets and vars on the repo:
 
-export default {
-  output: "standalone",
-  poweredByHeader: false,
-  async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
-  },
-};
-```
+| Setting | Type | Value |
+|---|---|---|
+| `AWS_DEPLOY_ROLE_ARN` | secret | OIDC role ARN |
+| `DATABASE_URL` | secret | Postgres connection string |
+| `AUTH_SECRET` | secret | `openssl rand -base64 32` output |
+| `AWS_REGION` | variable | e.g. `ap-southeast-1` |
+| `APP_URL` | variable | Your CloudFront URL or custom domain |
+| `ALLOWED_ORIGINS` | variable | CloudFront host + Lambda URL host, comma-separated |
 
-## Infra
+The smoke test in `scripts/verify-deploy.sh` runs post-deploy and fails CI if any critical flow regresses.
 
-Two deploy patterns supported. Pick by traffic and budget.
+## Cost
 
-### Default: Serverless (Lambda + CloudFront via OpenNext)
+- Lambda Free Tier: 1M req/month, 400k GB-seconds → covers idle + light traffic
+- S3 Free Tier: 5GB + 20k GET → covers static assets
+- CloudFront Free Tier: 1TB transfer/month
+- Realistic idle: $0-2/month
 
-Best for portfolio apps and most production apps under ~1M requests/month.
+## Why not Fargate?
 
-- Idle cost: ~$0-2/month (Lambda scales to zero, CloudFront has no fixed cost)
-- Cold start: 200-800ms on first request after ~10 min idle
-- Built via `open-next build`, deployed via CDK
+Fargate (ECS + ALB + RDS + NAT) costs ~$95/month idle. For a portfolio or low-traffic app it's strictly worse. If you have steady high traffic, websockets, or long-running jobs, fork this repo, swap `NextjsServerless` for an equivalent Fargate construct, and reintroduce the VPC + ECR base. That's a deliberate choice; the platform's default doesn't carry that infra by accident.
 
-Stack: `Lambda` (server) + `Lambda` (image opt) + `S3` (static assets) + `CloudFront` (edge).
+## Why not Vercel?
 
-VPC not required. Connects to managed Postgres (Neon, RDS Proxy) over the public internet via TLS.
-
-### Alternative: ECS Fargate
-
-Use when you have steady traffic, need long-running connections, websockets, or run heavyweight Node deps that exceed Lambda's 250MB unzipped limit.
-
-- Idle cost: ~$95/month (NAT + Fargate + ALB + RDS)
-- No cold starts
-- Deployed via `docker build` + `cdk deploy`
-
-Stack: `ECS Fargate` + `ALB` + `RDS Postgres` + the platform `VPC` and `ECR`.
-
-### How to choose
-
-| Question | Pick |
-|---|---|
-| Hobbyist or portfolio? | Serverless |
-| Less than 1M requests/month? | Serverless |
-| Steady high traffic, websockets, long-running jobs? | ECS Fargate |
-| Hard sub-100ms latency on every request? | ECS Fargate |
-| Want $0 idle bill? | Serverless |
-
-For both patterns:
-- Add an app-specific CDK stack at `infra/cdk/<app>/`
-- Provision its own database (Neon for serverless, RDS for Fargate)
-- Reuse platform base resources (ECR for Fargate path; serverless doesn't need them)
-
+Vercel is the obvious choice for serverless Next.js — and if your story is "I ship products on Vercel", use Vercel. This platform exists to show competence with AWS-native deploys (CDK, Lambda, CloudFront, IAM, OIDC) on top of the same Next.js code. Different goal.
