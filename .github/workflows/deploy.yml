@@ -23,8 +23,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  APP_DIR: apps/web
-  CDK_DIR: infra/cdk/app
+  # Override with repo variables if your paths differ from the convention.
+  APP_DIR: ${{ vars.APP_DIR || 'apps/web' }}
+  CDK_DIR: ${{ vars.CDK_DIR || 'infra/cdk/_template' }}
   NODE_VERSION: "20"
 
 jobs:

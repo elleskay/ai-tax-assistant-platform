@@ -80,12 +80,47 @@ check_css_serves() {
   echo "$type" | grep -qi "text/css" || { note "css served as $type"; return 1; }
 }
 
+# 7. NextAuth providers endpoint responds with JSON (proves the auth API
+# layer works end to end, not just static HTML)
+check_auth_providers() {
+  local body
+  body=$(curl -sS --max-time 10 "$URL/api/auth/providers")
+  echo "$body" | grep -q '"id":' || { note "body: $body"; return 1; }
+}
+
+# 8. NextAuth CSRF endpoint returns a token (proves Server Action /
+# auth POST surface is reachable and the host is properly trusted)
+check_auth_csrf() {
+  local body
+  body=$(curl -sS --max-time 10 "$URL/api/auth/csrf")
+  echo "$body" | grep -q '"csrfToken":"[a-f0-9]' || { note "body: $body"; return 1; }
+}
+
+# 9. Auth callback URL does NOT leak the Lambda function URL host
+# (regression check for the AUTH_URL gotcha we hit on the first deploy)
+check_no_lambda_url_leak() {
+  local body
+  body=$(curl -sS --max-time 10 "$URL/api/auth/session")
+  if echo "$body" | grep -q 'lambda-url'; then
+    note "session response contains 'lambda-url': $body"
+    return 1
+  fi
+  # Also check the login page HTML
+  if curl -sS --max-time 10 "$URL/login" | grep -q 'lambda-url\.'; then
+    note "/login HTML contains lambda-url reference"
+    return 1
+  fi
+}
+
 check "Health endpoint" check_health
 check "Root redirects to /login" check_root_redirect
 check "/login renders" check_login_page
 check "Security headers present" check_security_headers
 check "HTML loads a stylesheet" check_styled_html
 check "Stylesheet serves as text/css" check_css_serves
+check "NextAuth /api/auth/providers responds JSON" check_auth_providers
+check "NextAuth /api/auth/csrf returns a token" check_auth_csrf
+check "No Lambda Function URL leaked in auth surface" check_no_lambda_url_leak
 
 echo
 echo "Summary: $pass passed, $fail failed"

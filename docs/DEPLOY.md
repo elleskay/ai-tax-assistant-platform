@@ -112,6 +112,57 @@ These all bit us in production. The platform encodes the fixes; do not undo them
 
 **Fix:** Run `open-next build` in `apps/web/` before any CDK command (including bootstrap), because `bin/app.ts` instantiates the stack on synth and the construct reads `.open-next/` paths.
 
+### 7. First deploy needs two passes (or a custom domain)
+
+**Symptom:** You don't know the CloudFront URL until after the first deploy completes. But the Lambda needs `AUTH_URL` set to that URL, and the Next.js build needs `ALLOWED_ORIGINS` to include it. Chicken and egg.
+
+**Fix (cheap):** Two-pass deploy.
+1. First pass: build with `ALLOWED_ORIGINS="*.cloudfront.net,*.lambda-url.<region>.on.aws"` (wildcards work for `allowedOrigins`). Deploy with `AUTH_URL="https://placeholder.cloudfront.net"`. The deploy succeeds; auth callbacks would fail.
+2. Read the CloudFront URL from `cdk-outputs.json`.
+3. Second pass: redeploy with `AUTH_URL=<real CloudFront URL>`. No rebuild needed if the only change is Lambda env vars.
+
+**Fix (better):** Use a custom domain. Pass `customDomain` to `NextjsServerless`:
+```ts
+new NextjsServerless(this, "Web", {
+  appPath,
+  environment: { AUTH_URL: "https://armoury.example.com", ... },
+  customDomain: {
+    domainName: "armoury.example.com",
+    certificateArn: "arn:aws:acm:us-east-1:...",
+    hostedZoneId: "Z123...",
+    hostedZoneName: "example.com",
+  },
+});
+```
+Now `AUTH_URL` is known up front. One-pass deploy.
+
+### 8. Refactoring an existing stack into the construct changes the CloudFront URL
+
+**Symptom:** You wrote raw CDK first, then refactored to use `NextjsServerless`. CDK plans REPLACE for CloudFront, S3, Lambda. Your URL changes and CloudFront takes 10-15 minutes to delete the old distribution.
+
+**Fix:** Pass `logicalIdOverrides` to preserve CloudFormation logical IDs:
+```ts
+new NextjsServerless(this, "Web", {
+  appPath,
+  environment: { ... },
+  logicalIdOverrides: {
+    serverFunction: "ServerFunction6F3D7051",   // from the old template
+    imageFunction: "ImageFunctionE28774B0",
+    assetsBucket: "AssetsBucket5CB76180",
+    distribution: "Distribution830FAC52",
+  },
+});
+```
+Find the existing IDs in your stack's `cdk synth` output (or in the AWS Console under CloudFormation, Resources tab) before the refactor. CDK then treats these as the same resources and updates in place.
+
+If you're shipping a brand-new app, ignore this. Logical ID overrides only matter for in-place upgrades.
+
+### 9. CloudFront deletes are slow
+
+**Symptom:** `cdk deploy` blocks for 10-15 minutes after "UPDATE_COMPLETE" because CloudFormation is in `UPDATE_COMPLETE_CLEANUP_IN_PROGRESS`, removing the old CloudFront distribution.
+
+**Fix:** Not a bug, just AWS reality. CloudFront delete drains edge caches globally. New resources are already live before the cleanup finishes; you can verify with the new URL while CloudFormation drags. Use `logicalIdOverrides` (gotcha #8) to avoid the replace entirely.
+
 ## Environments
 
 Default: `production`. Add `staging` by:
