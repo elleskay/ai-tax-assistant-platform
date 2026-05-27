@@ -64,6 +64,8 @@ jobs:
           name: open-next-output
           path: apps/web/.open-next
           retention-days: 1
+          include-hidden-files: true
+          if-no-files-found: error
 
   cdk-synth:
     name: CDK synth (proves construct works against demo)
