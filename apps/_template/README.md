@@ -15,7 +15,12 @@ Files you copy into a new app on first scaffold. They encode the production patt
 | `components/Toaster.tsx` | Sonner toast root. Mount once in layout. |
 | `lib/email.ts` | Resend helper. No-ops without `RESEND_API_KEY` |
 | `lib/rate-limit.ts` | Upstash Redis rate-limit factory. No-ops without `UPSTASH_REDIS_*` |
+| `components/StatCard.tsx` | Generic stat card with lucide icon, value, tone, optional delta |
+| `components/EmptyState.tsx` | Generic empty state with lucide icon, title, optional CTA |
+| `components/PageHeader.tsx` | Generic page header with title, description, actions |
+| `components/ThemeProvider.tsx`, `components/ThemeToggle.tsx` | next-themes wiring + sun/moon/system toggle |
 | `components/forms-README.md` | Doc on the two valid form patterns; install RHF per app if you want pattern B |
+| `components/theming-README.md` | Doc on picking brand color, icon, layout, dashboard composition per app |
 
 ## Why each one exists
 
