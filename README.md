@@ -1,10 +1,14 @@
-# platform
+<div align="center">
 
-A reusable foundation for shipping Next.js apps to AWS serverless, fast and safely. It is a TypeScript monorepo template, not a product: clone it per app and you inherit a working CI/CD pipeline, infrastructure as code via AWS CDK, security scanning, OIDC-based deploys with zero stored credentials, a spec-driven test gate that blocks merges until every requirement is covered, and a deploy smoke test that catches the production failures this template already learned the hard way.
+<img src="docs/banner.png" alt="platform: clone it, ship Next.js apps to AWS serverless on day one" width="100%">
 
-Designed to be cloned per app, not vendored as a dependency. The owner's apps (CoverLens, Cancer Navigator, Armoury) are all cloned from it. The repo is its own proof: a real demo app at `apps/_demo/` is built and synthesised by the same workflow every cloned app inherits, so if the foundation breaks, CI fails here before any app picks it up.
+[![CI](https://github.com/elleskay/platform/actions/workflows/ci.yml/badge.svg)](https://github.com/elleskay/platform/actions/workflows/ci.yml) &nbsp;[![Security](https://github.com/elleskay/platform/actions/workflows/security.yml/badge.svg)](https://github.com/elleskay/platform/actions/workflows/security.yml) &nbsp;![IaC](https://img.shields.io/badge/IaC-AWS%20CDK%20%2B%20OpenNext-4F46E5) &nbsp;![deploys](https://img.shields.io/badge/deploys-OIDC%2C%20no%20stored%20keys-06B6D4) &nbsp;[![license](https://img.shields.io/badge/license-MIT-64748B)](LICENSE)
 
-Repo: https://github.com/elleskay/platform
+**A reusable foundation for shipping Next.js apps to AWS serverless, fast and safely.** A TypeScript monorepo template, not a product: clone it per app and inherit a working CI/CD pipeline, infrastructure as code via AWS CDK, security scanning, OIDC-based deploys with zero stored credentials, a spec-driven test gate that blocks merges until every requirement is covered, and a deploy smoke test that catches the production failures this template already learned the hard way.
+
+The owner's apps, [CoverLens](https://github.com/elleskay/insurance-dashboard), [Cancer Navigator](https://github.com/elleskay/cancer-navigator), and [Armoury](https://github.com/elleskay/armoury), are all cloned from it. The repo is its own proof: a real demo app at `apps/_demo/` is built and synthesised by the same workflow every cloned app inherits, so if the foundation breaks, CI fails here before any app picks it up.
+
+</div>
 
 ## What you get by cloning
 
