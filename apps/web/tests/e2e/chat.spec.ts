@@ -21,7 +21,7 @@ specTest(
   "IRAS-CHAT-001",
   "Home page renders the chat interface",
   async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/assistant");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.getByLabel("Ask a tax question")).toBeVisible();
     await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
@@ -33,7 +33,7 @@ specTest(
   "IRAS-CHAT-003",
   "A general-information disclaimer is always visible on the chat page",
   async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/assistant");
     await expect(
       page.getByText(/general information only, not personalised tax advice/i),
     ).toBeVisible();
@@ -55,7 +55,7 @@ specTest(
         body: uiMessageStream(ASSISTANT_REPLY),
       });
     });
-    await page.goto("/");
+    await page.goto("/assistant");
     await page.getByLabel("Ask a tax question").fill("What is the GST threshold?");
     await page.getByRole("button", { name: "Send" }).click();
     await expect(
@@ -95,7 +95,7 @@ specTest(
       });
     });
 
-    await page.goto("/");
+    await page.goto("/assistant");
     await page.getByLabel("Ask a tax question").fill("What is the GST threshold?");
     await page.getByRole("button", { name: "Send" }).click();
 

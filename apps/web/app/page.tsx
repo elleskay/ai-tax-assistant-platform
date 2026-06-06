@@ -1,360 +1,139 @@
-"use client";
+import Link from "next/link";
+import {
+  MessageSquare,
+  Wrench,
+  BarChart3,
+  ShieldCheck,
+  Landmark,
+  Info,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
-import { useEffect, useState } from "react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, isToolUIPart } from "ai";
-import { Info, Plus, MessageSquare, Trash2 } from "lucide-react";
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from "@/components/ai-elements/conversation";
-import {
-  Message,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message";
-import {
-  PromptInput,
-  PromptInputTextarea,
-  PromptInputFooter,
-  PromptInputSubmit,
-  type PromptInputMessage,
-} from "@/components/ai-elements/prompt-input";
-import { Tool, ToolHeader } from "@/components/ai-elements/tool";
-import { loadCustomTools } from "@/lib/custom-tools";
-import { loadConfig } from "@/lib/routing-rules";
-import { loadBuiltinConfig } from "@/lib/builtin-tools";
-import {
-  type Conversation as Convo,
-  loadConversations,
-  saveConversations,
-  loadCurrentId,
-  saveCurrentId,
-  newConversationId,
-  titleFromMessages,
-} from "@/lib/conversations";
+export const metadata = {
+  title: "IRAS Tax Assistant - how to use",
+};
 
-const TOPICS = [
-  { label: "GST", question: "What is the GST registration threshold?" },
-  { label: "Income tax", question: "When is the income tax filing deadline?" },
-  { label: "Corporate tax", question: "What is the corporate tax rate in Singapore?" },
-  { label: "SRS", question: "What is the SRS contribution cap?" },
+const STEPS = [
+  {
+    href: "/assistant",
+    icon: MessageSquare,
+    title: "Assistant",
+    body: "Ask Singapore tax questions in plain language. It looks up IRAS facts, can work out a rough chargeable-income estimate, and routes anything personal to a human advisor. Use New chat and the history sidebar to manage conversations.",
+    cta: "Start asking",
+  },
+  {
+    href: "/tools",
+    icon: Wrench,
+    title: "MCP tools",
+    body: "The tools the assistant calls (from iras-mcp-server). Run them, edit the built-in ones (enable or disable, change descriptions, edit the lookup facts), or build your own. Your edits apply to the assistant.",
+    cta: "Open MCP tools",
+  },
+  {
+    href: "/evals",
+    icon: BarChart3,
+    title: "Evals",
+    body: "Configure the model routing rules and the test cases, then click Run. Each case routes to a model and is graded against your keywords, so you can compare models and pass rates.",
+    cta: "Open Evals",
+  },
+  {
+    href: "/admin",
+    icon: ShieldCheck,
+    title: "Advisor queue",
+    body: "When the assistant escalates a personal or complex question, it lands here for a human advisor to review and resolve.",
+    cta: "Open advisor queue",
+  },
 ];
 
-export default function ChatPage() {
-  const [input, setInput] = useState("");
-  const { messages, sendMessage, status, setMessages, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      prepareSendMessagesRequest: ({ id, messages, trigger, messageId, body }) => ({
-        body: {
-          id,
-          messages,
-          trigger,
-          messageId,
-          ...body,
-          customTools: loadCustomTools(),
-          routingConfig: loadConfig(),
-          builtinConfig: loadBuiltinConfig(),
-        },
-      }),
-    }),
-  });
+const EXAMPLES = [
+  "What is the GST registration threshold?",
+  "What is the corporate income tax rate?",
+  "When is the income tax filing deadline?",
+  "What is the SRS contribution cap?",
+];
 
-  const [conversations, setConversations] = useState<Convo[]>([]);
-  const [currentId, setCurrentId] = useState<string>("");
-  const [hydrated, setHydrated] = useState(false);
-
-  // Load saved conversations and restore the current one.
-  useEffect(() => {
-    const list = loadConversations();
-    const savedId = loadCurrentId();
-    if (list.length > 0) {
-      const current = list.find((c) => c.id === savedId) ?? list[0];
-      setConversations(list);
-      setCurrentId(current.id);
-      setMessages(current.messages);
-    } else {
-      const id = newConversationId();
-      const fresh: Convo = { id, title: "New chat", messages: [], updatedAt: Date.now() };
-      setConversations([fresh]);
-      setCurrentId(id);
-      saveCurrentId(id);
-    }
-    setHydrated(true);
-  }, [setMessages]);
-
-  // Persist the active conversation when a turn settles (not mid-stream).
-  useEffect(() => {
-    if (!hydrated || !currentId) return;
-    if (status === "submitted" || status === "streaming") return;
-    setConversations((prev) => {
-      const next = prev.map((c) =>
-        c.id === currentId
-          ? { ...c, messages, title: titleFromMessages(messages), updatedAt: Date.now() }
-          : c,
-      );
-      saveConversations(next);
-      return next;
-    });
-  }, [messages, status, hydrated, currentId]);
-
-  const busy = status === "submitted" || status === "streaming";
-  const empty = messages.length === 0;
-
-  function submit(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed || busy) return;
-    sendMessage({ text: trimmed });
-    setInput("");
-  }
-  function handleSubmit(message: PromptInputMessage) {
-    submit(message.text ?? input);
-  }
-
-  function newChat() {
-    if (busy) return;
-    // If the current chat is already empty, stay on it.
-    if (messages.length === 0) return;
-    const id = newConversationId();
-    const fresh: Convo = { id, title: "New chat", messages: [], updatedAt: Date.now() };
-    setConversations((prev) => {
-      const next = [fresh, ...prev];
-      saveConversations(next);
-      return next;
-    });
-    setCurrentId(id);
-    saveCurrentId(id);
-    setMessages([]);
-  }
-
-  function openChat(id: string) {
-    if (busy || id === currentId) return;
-    const conv = conversations.find((c) => c.id === id);
-    if (!conv) return;
-    setCurrentId(id);
-    saveCurrentId(id);
-    setMessages(conv.messages);
-  }
-
-  function deleteChat(id: string) {
-    setConversations((prev) => {
-      const next = prev.filter((c) => c.id !== id);
-      saveConversations(next);
-      if (id === currentId) {
-        if (next.length > 0) {
-          setCurrentId(next[0].id);
-          saveCurrentId(next[0].id);
-          setMessages(next[0].messages);
-        } else {
-          const fresh: Convo = {
-            id: newConversationId(),
-            title: "New chat",
-            messages: [],
-            updatedAt: Date.now(),
-          };
-          setCurrentId(fresh.id);
-          saveCurrentId(fresh.id);
-          setMessages([]);
-          const seeded = [fresh];
-          saveConversations(seeded);
-          return seeded;
-        }
-      }
-      return next;
-    });
-  }
-
-  const composer = (large: boolean) => (
-    <PromptInput
-      onSubmit={handleSubmit}
-      className={large ? "rounded-2xl border shadow-sm" : "rounded-xl border"}
-    >
-      <PromptInputTextarea
-        aria-label="Ask a tax question"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Ask anything, e.g. what is the GST registration threshold?"
-      />
-      <PromptInputFooter>
-        <span className="flex items-center gap-1.5 pl-1 text-xs text-muted-foreground">
-          <Info className="h-3.5 w-3.5" />
-          General information only, not personalised tax advice.
-        </span>
-        <PromptInputSubmit
-          aria-label="Send"
-          status={status}
-          disabled={busy || input.trim().length === 0}
-        />
-      </PromptInputFooter>
-    </PromptInput>
-  );
-
+export default function LandingPage() {
   return (
-    <div className="flex min-h-0 flex-1">
-      {/* History sidebar */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r bg-card md:flex">
-        <div className="p-3">
-          <button
-            type="button"
-            onClick={newChat}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+    <main id="main" className="mx-auto w-full max-w-5xl px-4 py-12 pb-20">
+      {/* Hero */}
+      <section className="flex flex-col items-center gap-5 text-center">
+        <span
+          aria-hidden
+          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-from to-brand-to text-white shadow-soft"
+        >
+          <Landmark className="h-7 w-7" />
+        </span>
+        <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-navy sm:text-4xl">
+          Singapore tax, answered in your browser
+        </h2>
+        <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
+          A conversational assistant for GST, income tax, corporate tax, and SRS,
+          plus the tools and evaluations behind it. No install, no terminal, no API
+          key of your own.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/assistant"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-gradient-to-br from-brand-from to-brand-to px-5 font-medium text-white shadow-soft transition-all hover:shadow-pop"
           >
-            <Plus className="h-4 w-4" /> New chat
-          </button>
-        </div>
-        <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          History
-        </div>
-        <nav className="flex-1 overflow-y-auto px-2 pb-3">
-          {conversations.length === 0 ? (
-            <p className="px-2 py-2 text-xs text-muted-foreground">No conversations yet.</p>
-          ) : (
-            <ul className="flex flex-col gap-0.5">
-              {conversations.map((c) => (
-                <li key={c.id} className="group flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => openChat(c.id)}
-                    aria-current={c.id === currentId ? "true" : undefined}
-                    className={`flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-2 text-left text-sm ${
-                      c.id === currentId
-                        ? "bg-accent text-accent-foreground"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <MessageSquare className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{c.title || "New chat"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Delete ${c.title || "chat"}`}
-                    onClick={() => deleteChat(c.id)}
-                    className="ml-0.5 rounded-md p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </nav>
-      </aside>
-
-      {/* Chat column */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Mobile new-chat bar */}
-        <div className="flex items-center justify-end border-b px-4 py-2 md:hidden">
-          <button
-            type="button"
-            onClick={newChat}
-            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium text-foreground"
+            <MessageSquare className="h-4 w-4" /> Start asking
+          </Link>
+          <Link
+            href="/tools"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border bg-card px-5 font-medium text-foreground transition-colors hover:bg-accent"
           >
-            <Plus className="h-4 w-4" /> New chat
-          </button>
+            <Wrench className="h-4 w-4" /> Explore the tools
+          </Link>
         </div>
+      </section>
 
-        {empty ? (
-          <main
-            id="main"
-            className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-8 px-4 pb-24 text-center"
-          >
-            <span className="rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-gold-foreground">
-              Singapore tax, in plain language
-            </span>
-            <div className="flex flex-col gap-4">
-              <h2 className="text-4xl font-semibold tracking-tight text-navy sm:text-5xl">
-                Singapore tax,
-                <br />
-                answered.
-              </h2>
-              <p className="mx-auto max-w-md text-base leading-relaxed text-muted-foreground">
-                Ask about GST, income tax, corporate tax, or SRS. Anything personal is
-                routed to a human advisor.
-              </p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2.5">
-              {TOPICS.map((t) => (
-                <button
-                  key={t.label}
-                  type="button"
-                  onClick={() => submit(t.question)}
-                  className="inline-flex cursor-pointer items-center rounded-full bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-[filter] hover:brightness-95"
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-            <div className="w-full max-w-xl">{composer(true)}</div>
-          </main>
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <Conversation className="flex-1">
-              <ConversationContent id="main" className="mx-auto w-full max-w-2xl gap-5 px-4 py-6">
-                {messages.map((message) => (
-                  <Message
-                    key={message.id}
-                    from={message.role}
-                    data-testid="message"
-                    data-role={message.role}
-                    style={{ animation: "var(--animate-msg-in)" }}
-                  >
-                    <MessageContent>
-                      {message.parts.map((part, i) => {
-                        if (part.type === "text") {
-                          return message.role === "assistant" ? (
-                            <MessageResponse key={i} className="prose-chat">
-                              {part.text}
-                            </MessageResponse>
-                          ) : (
-                            <span key={i} className="whitespace-pre-wrap">
-                              {part.text}
-                            </span>
-                          );
-                        }
-                        if (isToolUIPart(part)) {
-                          return (
-                            <Tool key={i} className="my-1">
-                              <ToolHeader
-                                type={part.type as `tool-${string}`}
-                                state={part.state}
-                              />
-                            </Tool>
-                          );
-                        }
-                        return null;
-                      })}
-                      {message.role === "assistant" &&
-                      (message as { metadata?: { model?: string } }).metadata?.model ? (
-                        <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
-                          Routed to{" "}
-                          {(message as { metadata?: { model?: string } }).metadata!.model}
-                        </span>
-                      ) : null}
-                    </MessageContent>
-                  </Message>
-                ))}
-              </ConversationContent>
-              <ConversationScrollButton />
-            </Conversation>
+      {/* How to use */}
+      <section className="mt-14">
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          How to use it
+        </h3>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {STEPS.map(({ href, icon: Icon, title, body, cta }) => (
+            <Card key={href} className="shadow-soft transition-shadow hover:shadow-card">
+              <CardContent className="flex h-full flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent text-primary">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <h4 className="text-base font-semibold text-navy">{title}</h4>
+                </div>
+                <p className="flex-1 text-sm leading-relaxed text-muted-foreground">{body}</p>
+                <Link href={href} className="text-sm font-medium text-primary underline underline-offset-2">
+                  {cta}
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
 
-            <div className="shrink-0 px-4 py-4">
-              <div className="mx-auto w-full max-w-2xl">
-                {error ? (
-                  <p
-                    role="alert"
-                    className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                  >
-                    Something went wrong reaching the assistant. Please try again.
-                  </p>
-                ) : null}
-                {composer(false)}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      {/* Try asking */}
+      <section className="mt-12">
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Good first questions
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {EXAMPLES.map((q) => (
+            <Link
+              key={q}
+              href="/assistant"
+              className="rounded-full bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-[filter] hover:brightness-95"
+            >
+              {q}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <p className="mt-12 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+        <Info className="h-3.5 w-3.5" />
+        General information only, not personalised tax advice. Built on iras-mcp-server,
+        iras-tax-agent, and llm-eval-iras.
+      </p>
+    </main>
   );
 }
