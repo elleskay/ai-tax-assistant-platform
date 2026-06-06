@@ -108,7 +108,7 @@ requirements:
     severity: high
     given: A visitor is anywhere on the site
     when: They look at the primary navigation
-    then: There are links to Assistant, Tools, Evals, and the Advisor queue
+    then: There are links to Assistant, MCP tools, Evals, and the Advisor queue
     tags: [nav, showcase]
 
   - id: IRAS-TOOLS-001
