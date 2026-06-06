@@ -1,6 +1,6 @@
 <div align="center">
 
-# IRAS Tax Assistant
+# Unofficial IRAS Tax Assistant
 
 **A conversational Singapore tax assistant that answers GST, income tax, corporate tax, and SRS questions in plain language, calls real MCP-style tools, routes every query to the cheapest capable model across OpenAI and Anthropic, and escalates anything personal to a human.**
 
