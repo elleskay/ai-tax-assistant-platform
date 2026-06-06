@@ -60,66 +60,50 @@ specTest(
 
 specTest(
   "IRAS-EVAL-002",
-  "The router playground shows the routed model for a query",
+  "The route preview shows where a query routes",
   async ({ page }) => {
-    // The router is a live model call, so stub /api/route with a fixed decision.
-    await page.route("**/api/route", async (route) => {
-      await route.fulfill({
-        status: 200,
-        json: {
-          model: "Claude Haiku 4.5",
-          modelId: "claude-haiku-4-5-20251001",
-          provider: "anthropic",
-          tier: "cheap",
-          reason: "Simple factual query, cheapest capable model.",
-        },
-      });
-    });
     await page.goto("/evals");
-    await page.getByLabel("Query to route").fill("What is the GST threshold?");
-    await page.getByRole("button", { name: "Route" }).click();
-    const result = page.getByTestId("route-result");
-    await expect(result).toContainText("Claude Haiku 4.5");
-    await expect(result).toContainText("cheapest capable model");
+    // Deterministic, client-side, no model call.
+    await page.getByLabel("Try a query").fill("What is the corporate tax rate?");
+    const preview = page.getByTestId("route-preview");
+    await expect(preview).toContainText("GPT-4o mini");
+    await expect(preview).toContainText("factual-lookup");
   },
   { category: "functional" },
 );
 
 specTest(
   "IRAS-EVAL-003",
-  "The eval runner reports PASS or FAIL for a check",
+  "Running the test cases populates the result stats",
   async ({ page }) => {
-    // Live model call, so stub the API with a fixed graded result.
+    // Running calls the routed model per case, so stub /api/eval.
     await page.route("**/api/eval", async (route) => {
       await route.fulfill({
         status: 200,
         json: {
           answer: "The GST registration threshold is SGD 1,000,000 in taxable turnover.",
-          checks: [
-            { keyword: "1,000,000", pass: true },
-            { keyword: "turnover", pass: true },
-          ],
+          checks: [{ keyword: "1,000,000", pass: true }],
           pass: true,
+          model: "GPT-4o mini",
         },
       });
     });
     await page.goto("/evals");
-    await page.getByLabel("Eval question").fill("What is the GST threshold?");
-    await page.getByLabel("Expected keywords").fill("1,000,000, turnover");
-    await page.getByRole("button", { name: "Run check" }).click();
-    await expect(page.getByTestId("eval-verdict")).toHaveText(/PASS/);
+    await page.getByRole("button", { name: "Run" }).click();
+    const stats = page.getByTestId("eval-stats");
+    await expect(stats).toBeVisible();
+    await expect(stats).toContainText("Pass rate");
   },
   { category: "functional" },
 );
 
 specTest(
   "IRAS-EVAL-001",
-  "Evals page shows the pass rate and the models compared",
+  "Evals page shows configurable routing rules and test cases",
   async ({ page }) => {
     await page.goto("/evals");
-    await expect(page.getByText("85%").first()).toBeVisible();
-    await expect(page.getByText("Anthropic Claude Haiku 4.5").first()).toBeVisible();
-    await expect(page.getByText("OpenAI GPT-4o mini").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Model routing rules" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Test cases" })).toBeVisible();
   },
   { category: "ui" },
 );
