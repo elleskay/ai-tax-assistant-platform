@@ -22,6 +22,7 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { Tool, ToolHeader } from "@/components/ai-elements/tool";
+import { loadCustomTools } from "@/lib/custom-tools";
 
 const TOPICS = [
   { label: "GST", question: "What is the GST registration threshold?" },
@@ -33,7 +34,14 @@ const TOPICS = [
 export default function ChatPage() {
   const [input, setInput] = useState("");
   const { messages, sendMessage, status, setMessages } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      // Attach the visitor's own tools (from the Tools page) so the Assistant
+      // can call them. Read at send time so newly created tools take effect.
+      prepareSendMessagesRequest: ({ body }) => ({
+        body: { ...body, customTools: loadCustomTools() },
+      }),
+    }),
   });
 
   // Persist to sessionStorage so navigating to /admin and back, or a refresh,

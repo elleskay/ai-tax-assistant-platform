@@ -38,6 +38,27 @@ specTest(
 );
 
 specTest(
+  "IRAS-TOOLS-003",
+  "A visitor can create a custom tool and run it",
+  async ({ page }) => {
+    await page.goto("/tools");
+    await page.getByRole("button", { name: "New tool" }).click();
+    await page.getByLabel("Tool name").fill("greeting_tool");
+    await page.getByLabel("Tool description").fill("Greets by keyword");
+    await page.getByLabel("Keyword 1").fill("hi");
+    await page.getByLabel("Answer 1").fill("Hello there");
+    await page.getByRole("button", { name: "Save tool" }).click();
+
+    const card = page.locator('[data-testid="custom-tool"][data-name="greeting_tool"]');
+    await expect(card).toBeVisible();
+    await card.getByLabel("query").fill("hi");
+    await card.getByRole("button", { name: "Run" }).click();
+    await expect(card.getByTestId("custom-tool-result")).toContainText("Hello there");
+  },
+  { category: "functional" },
+);
+
+specTest(
   "IRAS-EVAL-001",
   "Evals page shows the pass rate and the models compared",
   async ({ page }) => {
