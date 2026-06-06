@@ -35,11 +35,29 @@ import {
   titleFromMessages,
 } from "@/lib/conversations";
 
+// Each example is chosen to exercise a different MCP tool and a different model
+// route, so the chips double as a live demo of the routing and the tools.
 const TOPICS = [
-  { label: "GST", question: "What is the GST registration threshold?" },
-  { label: "Income tax", question: "When is the income tax filing deadline?" },
-  { label: "Corporate tax", question: "What is the corporate tax rate in Singapore?" },
-  { label: "SRS", question: "What is the SRS contribution cap?" },
+  // lookup_tax_info tool, factual-lookup route -> GPT-4o mini
+  { label: "GST", hint: "lookup tool, GPT-4o mini", question: "What is the GST registration threshold?" },
+  // calculate_tax_estimate tool, calculation route -> GPT-4.1
+  {
+    label: "Income tax",
+    hint: "estimate tool, GPT-4.1",
+    question: "Estimate the chargeable income for an annual income of 120000 with 20000 in deductions",
+  },
+  // complex-reasoning route -> Claude Opus 4.8
+  {
+    label: "Corporate tax",
+    hint: "complex reasoning, Claude Opus 4.8",
+    question: "Compare the corporate income tax rate versus the top personal income tax rate",
+  },
+  // escalate_to_human tool, personalised-advice route -> Claude Sonnet 4.6
+  {
+    label: "SRS",
+    hint: "escalates to a human, Claude Sonnet 4.6",
+    question: "Should I contribute to SRS this year?",
+  },
 ];
 
 export default function ChatPage() {
@@ -326,9 +344,11 @@ export default function ChatPage() {
                   key={t.label}
                   type="button"
                   onClick={() => submit(t.question)}
-                  className="inline-flex cursor-pointer items-center rounded-full bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-[filter] hover:brightness-95"
+                  title={t.question}
+                  className="inline-flex cursor-pointer flex-col items-center rounded-xl bg-secondary px-4 py-2 text-center transition-[filter] hover:brightness-95"
                 >
-                  {t.label}
+                  <span className="text-sm font-medium text-secondary-foreground">{t.label}</span>
+                  <span className="text-[11px] text-muted-foreground">{t.hint}</span>
                 </button>
               ))}
             </div>
