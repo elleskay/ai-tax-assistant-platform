@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as cdk from "aws-cdk-lib";
+import * as s3 from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 import { NextjsServerless } from "./constructs/NextjsServerless";
 
@@ -11,7 +12,17 @@ export class WebStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    new NextjsServerless(this, "Web", {
+    // Private bucket backing the human-in-the-loop escalation queue. The Lambda
+    // filesystem is read-only, so escalations are stored here instead of a file.
+    // Not public: this holds user-submitted queries.
+    const hitlBucket = new s3.Bucket(this, "HitlBucket", {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
+
+    const web = new NextjsServerless(this, "Web", {
       appPath: path.resolve(__dirname, "..", "..", "..", "..", APP_REL),
       environment: {
         // The chat agent's runtime secret. Baked at synth (docs/DEPLOY.md #13),
@@ -19,6 +30,8 @@ export class WebStack extends cdk.Stack {
         // (.github/workflows/deploy.yml) and stored as a GitHub Actions secret.
         ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ?? "",
         ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL ?? "",
+        // HITL escalation store. Resolved at deploy time (a CDK token).
+        HITL_BUCKET: hitlBucket.bucketName,
       },
       // The chat route streams from the LLM and can exceed the 30s default.
       // Raises both the Lambda timeout and the CloudFront origin read timeout
@@ -31,5 +44,8 @@ export class WebStack extends cdk.Stack {
       //   hostedZoneId: "Z123ABCDE",
       // },
     });
+
+    // Let the server Lambda read and write escalations.
+    hitlBucket.grantReadWrite(web.serverFunction);
   }
 }
