@@ -183,6 +183,11 @@ export class NextjsServerless extends Construct {
       sources: [s3deploy.Source.asset(path.join(openNextDir, "assets"))],
       destinationBucket: this.assetsBucket,
       prune: true,
+      // The default 128 MB deployment Lambda is network-throughput-starved and
+      // can time out uploading a Next.js asset bundle (hundreds of small chunk
+      // files). More memory means proportionally more bandwidth, so the upload
+      // finishes in well under the timeout.
+      memoryLimit: 1536,
     });
 
     const serverLogGroup = new logs.LogGroup(this, "ServerLogGroup", {
