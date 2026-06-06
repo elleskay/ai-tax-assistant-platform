@@ -138,9 +138,9 @@ export default function LandingPage() {
       </section>
 
       <p className="mt-12 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-        <Info className="h-3.5 w-3.5" />
-        General information only, not personalised tax advice. Built on iras-mcp-server,
-        iras-tax-agent, and llm-eval-iras.
+        <Info className="h-3.5 w-3.5 shrink-0" />
+        Unofficial demo, not affiliated with IRAS. General information only, not
+        personalised tax advice. Built on iras-mcp-server, iras-tax-agent, and llm-eval-iras.
       </p>
     </main>
   );
