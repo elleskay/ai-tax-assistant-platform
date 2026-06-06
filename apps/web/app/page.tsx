@@ -189,6 +189,13 @@ export default function ChatPage() {
                       }
                       return null;
                     })}
+                    {message.role === "assistant" &&
+                    (message as { metadata?: { model?: string } }).metadata?.model ? (
+                      <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
+                        Routed to{" "}
+                        {(message as { metadata?: { model?: string } }).metadata!.model}
+                      </span>
+                    ) : null}
                   </MessageContent>
                 </Message>
               ))}

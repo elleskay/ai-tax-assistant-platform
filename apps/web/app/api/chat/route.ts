@@ -8,14 +8,24 @@ import {
   type UIMessage,
 } from "ai";
 import { z } from "zod";
-import { anthropic, agentModel, SYSTEM } from "@/lib/agent";
+import { SYSTEM } from "@/lib/agent";
 import { taxTools } from "@/lib/tools";
 import { makeLimiter, isAllowed, clientIp } from "@/lib/rate-limit";
+import { chooseModel, resolveModel } from "@/lib/model-router";
 import {
   CustomToolsSchema,
   runCustomTool,
   type CustomTool,
 } from "@/lib/custom-tools";
+
+function latestUserText(messages: UIMessage[]): string {
+  const last = [...messages].reverse().find((m) => m.role === "user");
+  if (!last) return "";
+  return last.parts
+    .filter((p) => p.type === "text")
+    .map((p) => (p as { text: string }).text)
+    .join(" ");
+}
 
 // Turn validated, declarative user tool defs into AI SDK tools. execute only
 // does a keyword lookup or template fill (runCustomTool); no code is evaluated.
@@ -79,20 +89,28 @@ export async function POST(req: Request) {
     ? buildCustomTools(parsedCustom.data)
     : {};
 
-  const model = agentModel();
+  // The cheapest model decides which model should answer this query.
+  const decision = await chooseModel(latestUserText(messages));
 
   const result = streamText({
-    model: anthropic(model),
+    model: resolveModel(decision.entry),
     system: SYSTEM,
     messages: await convertToModelMessages(messages),
     tools: { ...taxTools, ...customTools },
     stopWhen: stepCountIs(5),
     temperature: 0,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
-    // Even out Anthropic's uneven token chunks into steady word-by-word output
-    // so the answer streams smoothly instead of arriving in patches.
+    // Even out uneven token chunks into steady word-by-word output so the answer
+    // streams smoothly instead of arriving in patches.
     experimental_transform: smoothStream({ delayInMs: 18, chunking: "word" }),
   });
 
-  return result.toUIMessageStreamResponse();
+  // Tell the client which model was chosen and why.
+  return result.toUIMessageStreamResponse({
+    messageMetadata: () => ({
+      model: decision.entry.label,
+      tier: decision.entry.tier,
+      reason: decision.reason,
+    }),
+  });
 }

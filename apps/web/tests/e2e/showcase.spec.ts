@@ -62,11 +62,25 @@ specTest(
   "IRAS-EVAL-002",
   "The router playground shows the routed model for a query",
   async ({ page }) => {
+    // The router is a live model call, so stub /api/route with a fixed decision.
+    await page.route("**/api/route", async (route) => {
+      await route.fulfill({
+        status: 200,
+        json: {
+          model: "Claude Haiku 4.5",
+          modelId: "claude-haiku-4-5-20251001",
+          provider: "anthropic",
+          tier: "cheap",
+          reason: "Simple factual query, cheapest capable model.",
+        },
+      });
+    });
     await page.goto("/evals");
-    await page.getByLabel("Query to route").fill("Should I contribute to SRS this year?");
+    await page.getByLabel("Query to route").fill("What is the GST threshold?");
+    await page.getByRole("button", { name: "Route" }).click();
     const result = page.getByTestId("route-result");
-    await expect(result).toContainText("Anthropic Claude Haiku 4.5");
-    await expect(result).toContainText("personalised-advice");
+    await expect(result).toContainText("Claude Haiku 4.5");
+    await expect(result).toContainText("cheapest capable model");
   },
   { category: "functional" },
 );
