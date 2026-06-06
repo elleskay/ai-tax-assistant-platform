@@ -42,6 +42,41 @@ specTest(
 );
 
 specTest(
+  "IRAS-CHAT-004",
+  "New chat clears the conversation and history keeps the previous one",
+  async ({ page }) => {
+    await page.route("**/api/chat", async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          "content-type": "text/event-stream",
+          "x-vercel-ai-ui-message-stream": "v1",
+        },
+        body: uiMessageStream(ASSISTANT_REPLY),
+      });
+    });
+    await page.goto("/");
+    await page.getByLabel("Ask a tax question").fill("What is the GST threshold?");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(
+      page.locator('[data-testid="message"][data-role="assistant"]'),
+    ).toBeVisible();
+    await page.waitForTimeout(800); // let the stubbed stream settle
+
+    await page.getByRole("button", { name: "New chat" }).click();
+
+    // Back to the empty state, no messages.
+    await expect(page.locator('[data-testid="message"]')).toHaveCount(0);
+    await expect(page.getByText("Singapore tax, in plain language")).toBeVisible();
+    // The previous conversation is in history.
+    await expect(
+      page.getByRole("button", { name: "What is the GST threshold?", exact: true }).first(),
+    ).toBeVisible();
+  },
+  { category: "functional" },
+);
+
+specTest(
   "IRAS-CHAT-002",
   "Sending a message shows the user message and the assistant reply",
   async ({ page }) => {

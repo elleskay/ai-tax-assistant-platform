@@ -47,6 +47,16 @@ requirements:
     tags: [chat]
     notes: The LLM is non-deterministic, so the e2e stubs /api/chat with a fixed UI message stream and asserts against the fixture.
 
+  - id: IRAS-CHAT-004
+    title: New chat clears the conversation and history keeps the previous one
+    category: functional
+    severity: medium
+    given: The assistant has a conversation with at least one message
+    when: The visitor clicks New chat
+    then: The conversation returns to the empty state and the previous one is listed in history
+    tags: [chat, history]
+    notes: The chat e2e stubs /api/chat.
+
   - id: IRAS-CHAT-003
     title: A general-information disclaimer is always visible on the chat page
     category: ui
