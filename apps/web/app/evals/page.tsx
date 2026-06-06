@@ -8,6 +8,8 @@ import {
   ROUTER_RULES,
   SAMPLE_CASES,
 } from "@/lib/eval-data";
+import { RouterPlayground } from "@/components/router-playground";
+import { EvalRunner } from "@/components/eval-runner";
 
 export const metadata = {
   title: "Evaluations - IRAS Tax Assistant",
@@ -148,6 +150,9 @@ export default function EvalsPage() {
           ))}
         </ul>
       </section>
+
+      <RouterPlayground />
+      <EvalRunner />
     </main>
   );
 }

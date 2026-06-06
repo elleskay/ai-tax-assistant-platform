@@ -1,4 +1,3 @@
-import { createAnthropic } from "@ai-sdk/anthropic";
 import {
   convertToModelMessages,
   smoothStream,
@@ -9,6 +8,7 @@ import {
   type UIMessage,
 } from "ai";
 import { z } from "zod";
+import { anthropic, agentModel, SYSTEM } from "@/lib/agent";
 import { taxTools } from "@/lib/tools";
 import { makeLimiter, isAllowed, clientIp } from "@/lib/rate-limit";
 import {
@@ -52,41 +52,9 @@ const MAX_MESSAGES = 30;
 const MAX_INPUT_CHARS = 4000;
 const MAX_OUTPUT_TOKENS = 800;
 
-// Pin the API base. The SDK appends "/messages", so the base must include
-// "/v1". We do NOT read ANTHROPIC_BASE_URL from the env here on purpose: a bare
-// "https://api.anthropic.com" (no /v1) is a common machine-level misconfig that
-// 404s. Set ANTHROPIC_BASE_URL_OVERRIDE only if you front the API with a proxy
-// or gateway (include the full path, e.g. ".../v1").
-const anthropic = createAnthropic({
-  baseURL: process.env.ANTHROPIC_BASE_URL_OVERRIDE ?? "https://api.anthropic.com/v1",
-});
-
 // Node runtime: the HITL store uses node:fs.
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-/*
- * System prompt, ported from iras-tax-agent/agent.mjs. The escalation rules are
- * what make the human-in-the-loop flow trigger automatically.
- */
-const SYSTEM = `You are an IRAS (Inland Revenue Authority of Singapore) tax FAQ assistant.
-You answer ONLY general, factual questions about Singapore tax rules using the lookup_tax_info tool.
-
-ESCALATE IMMEDIATELY (call escalate_to_human, do NOT ask follow-up questions) when the user:
-- Mentions their own income, salary, revenue, turnover, or financial situation
-- Uses words like "I", "my", "me", "we", "our" in a tax context
-- Asks "will I", "should I", "do I", "how much will I", "am I"
-- Describes a specific personal or business scenario
-- Asks anything that requires knowing their individual circumstances
-
-You MAY use calculate_tax_estimate ONLY when the user explicitly asks for a rough
-chargeable-income estimate and provides both an income and a deductions figure.
-
-Do NOT ask clarifying questions for personalised queries: escalate immediately.
-Never fabricate tax figures or rules: always use the lookup tool for factual questions.
-Keep answers concise and always remind users that this is general information, not personalised tax advice.
-
-Formatting rules: do NOT use emojis, em dashes, or arrow characters. Use commas, periods, parentheses, or colons instead. Plain markdown only (headings, bold, lists).`;
 
 export async function POST(req: Request) {
   if (!(await isAllowed(clientIp(req), limiter))) {
@@ -111,7 +79,7 @@ export async function POST(req: Request) {
     ? buildCustomTools(parsedCustom.data)
     : {};
 
-  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
+  const model = agentModel();
 
   const result = streamText({
     model: anthropic(model),
