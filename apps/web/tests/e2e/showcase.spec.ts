@@ -59,6 +59,46 @@ specTest(
 );
 
 specTest(
+  "IRAS-EVAL-002",
+  "The router playground shows the routed model for a query",
+  async ({ page }) => {
+    await page.goto("/evals");
+    await page.getByLabel("Query to route").fill("Should I contribute to SRS this year?");
+    const result = page.getByTestId("route-result");
+    await expect(result).toContainText("Anthropic Claude Haiku 4.5");
+    await expect(result).toContainText("personalised-advice");
+  },
+  { category: "functional" },
+);
+
+specTest(
+  "IRAS-EVAL-003",
+  "The eval runner reports PASS or FAIL for a check",
+  async ({ page }) => {
+    // Live model call, so stub the API with a fixed graded result.
+    await page.route("**/api/eval", async (route) => {
+      await route.fulfill({
+        status: 200,
+        json: {
+          answer: "The GST registration threshold is SGD 1,000,000 in taxable turnover.",
+          checks: [
+            { keyword: "1,000,000", pass: true },
+            { keyword: "turnover", pass: true },
+          ],
+          pass: true,
+        },
+      });
+    });
+    await page.goto("/evals");
+    await page.getByLabel("Eval question").fill("What is the GST threshold?");
+    await page.getByLabel("Expected keywords").fill("1,000,000, turnover");
+    await page.getByRole("button", { name: "Run check" }).click();
+    await expect(page.getByTestId("eval-verdict")).toHaveText(/PASS/);
+  },
+  { category: "functional" },
+);
+
+specTest(
   "IRAS-EVAL-001",
   "Evals page shows the pass rate and the models compared",
   async ({ page }) => {
