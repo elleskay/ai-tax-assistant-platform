@@ -9,7 +9,8 @@ import {
 } from "ai";
 import { z } from "zod";
 import { SYSTEM } from "@/lib/agent";
-import { taxTools } from "@/lib/tools";
+import { buildTaxTools } from "@/lib/tools";
+import { DEFAULT_BUILTIN_CONFIG, BuiltinToolsConfigSchema } from "@/lib/builtin-tools";
 import { makeLimiter, isAllowed, clientIp } from "@/lib/rate-limit";
 import { resolveById } from "@/lib/model-router";
 import { DEFAULT_MODEL_ID } from "@/lib/model-registry";
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
     messages?: UIMessage[];
     customTools?: unknown;
     routingConfig?: unknown;
+    builtinConfig?: unknown;
   } = await req.json();
   const messages = body.messages;
 
@@ -92,6 +94,13 @@ export async function POST(req: Request) {
   if (inputChars > MAX_INPUT_CHARS * MAX_MESSAGES) {
     return new Response("Message too long.", { status: 400 });
   }
+
+  // Built-in tools, configured by the visitor (enable/disable, descriptions,
+  // lookup facts), with defaults when no valid config is sent.
+  const parsedBuiltin = BuiltinToolsConfigSchema.safeParse(body.builtinConfig);
+  const builtinTools = buildTaxTools(
+    parsedBuiltin.success ? parsedBuiltin.data : DEFAULT_BUILTIN_CONFIG,
+  );
 
   // Merge any user-defined tools (validated, declarative only).
   const parsedCustom = CustomToolsSchema.safeParse(body.customTools ?? []);
@@ -110,7 +119,7 @@ export async function POST(req: Request) {
     model: resolved.model,
     system: SYSTEM,
     messages: await convertToModelMessages(messages),
-    tools: { ...taxTools, ...customTools },
+    tools: { ...builtinTools, ...customTools },
     stopWhen: stepCountIs(5),
     temperature: 0,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
