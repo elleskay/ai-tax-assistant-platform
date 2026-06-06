@@ -33,13 +33,21 @@ const TOPICS = [
 
 export default function ChatPage() {
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status, setMessages } = useChat({
+  const { messages, sendMessage, status, setMessages, error } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
       // Attach the visitor's own tools (from the Tools page) so the Assistant
-      // can call them. Read at send time so newly created tools take effect.
-      prepareSendMessagesRequest: ({ body }) => ({
-        body: { ...body, customTools: loadCustomTools() },
+      // can call them. The return value REPLACES the request body, so the full
+      // payload (id, messages, trigger) must be reconstructed, not just merged.
+      prepareSendMessagesRequest: ({ id, messages, trigger, messageId, body }) => ({
+        body: {
+          id,
+          messages,
+          trigger,
+          messageId,
+          ...body,
+          customTools: loadCustomTools(),
+        },
       }),
     }),
   });
@@ -189,7 +197,17 @@ export default function ChatPage() {
           </Conversation>
 
           <div className="shrink-0 px-4 py-4">
-            <div className="mx-auto w-full max-w-2xl">{composer(false)}</div>
+            <div className="mx-auto w-full max-w-2xl">
+              {error ? (
+                <p
+                  role="alert"
+                  className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                >
+                  Something went wrong reaching the assistant. Please try again.
+                </p>
+              ) : null}
+              {composer(false)}
+            </div>
           </div>
         </div>
       )}
