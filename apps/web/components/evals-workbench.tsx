@@ -15,7 +15,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MODELS } from "@/lib/model-registry";
+import { MODELS, modelOptionLabel } from "@/lib/model-registry";
 import {
   type RoutingConfig,
   type TestCase,
@@ -168,7 +168,7 @@ export function EvalsWorkbench() {
                   className="min-h-9 rounded-md border bg-card px-2 text-sm outline-none focus:border-primary"
                 >
                   {MODELS.map((m) => (
-                    <option key={m.id} value={m.id}>{m.label}</option>
+                    <option key={m.id} value={m.id}>{modelOptionLabel(m)}</option>
                   ))}
                 </select>
                 <input
@@ -215,7 +215,7 @@ export function EvalsWorkbench() {
                   className="min-h-8 rounded-md border bg-card px-2 text-sm outline-none focus:border-primary"
                 >
                   {MODELS.map((m) => (
-                    <option key={m.id} value={m.id}>{m.label}</option>
+                    <option key={m.id} value={m.id}>{modelOptionLabel(m)}</option>
                   ))}
                 </select>
               </span>
@@ -349,9 +349,21 @@ export function EvalsWorkbench() {
                       {r.error ? (
                         <p className="pl-6 text-xs text-destructive">{r.error}</p>
                       ) : (
-                        <p className="pl-6 text-xs text-muted-foreground">
-                          {r.checks.map((c) => `${c.pass ? "ok" : "miss"}: ${c.keyword}`).join("  |  ")}
-                        </p>
+                        <>
+                          <p className="pl-6 text-xs text-muted-foreground">
+                            {r.checks.map((c) => `${c.pass ? "ok" : "miss"}: ${c.keyword}`).join("  |  ")}
+                          </p>
+                          {r.answer ? (
+                            <details className="pl-6 text-xs">
+                              <summary className="cursor-pointer text-primary">
+                                Show response
+                              </summary>
+                              <pre className="mt-1 whitespace-pre-wrap rounded-md border bg-secondary/40 p-2 text-foreground">
+                                {r.answer}
+                              </pre>
+                            </details>
+                          ) : null}
+                        </>
                       )}
                     </CardContent>
                   </Card>
