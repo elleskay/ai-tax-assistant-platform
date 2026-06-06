@@ -24,6 +24,7 @@ import {
 import { Tool, ToolHeader } from "@/components/ai-elements/tool";
 import { loadCustomTools } from "@/lib/custom-tools";
 import { loadConfig } from "@/lib/routing-rules";
+import { loadBuiltinConfig } from "@/lib/builtin-tools";
 
 const TOPICS = [
   { label: "GST", question: "What is the GST registration threshold?" },
@@ -49,6 +50,7 @@ export default function ChatPage() {
           ...body,
           customTools: loadCustomTools(),
           routingConfig: loadConfig(),
+          builtinConfig: loadBuiltinConfig(),
         },
       }),
     }),
