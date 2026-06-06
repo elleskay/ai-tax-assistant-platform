@@ -11,7 +11,9 @@ import { z } from "zod";
 import { SYSTEM } from "@/lib/agent";
 import { taxTools } from "@/lib/tools";
 import { makeLimiter, isAllowed, clientIp } from "@/lib/rate-limit";
-import { chooseModel, resolveModel } from "@/lib/model-router";
+import { resolveById } from "@/lib/model-router";
+import { DEFAULT_MODEL_ID } from "@/lib/model-registry";
+import { DEFAULT_CONFIG, applyRoutingRules } from "@/lib/routing-rules";
 import {
   CustomToolsSchema,
   runCustomTool,
@@ -89,11 +91,13 @@ export async function POST(req: Request) {
     ? buildCustomTools(parsedCustom.data)
     : {};
 
-  // The cheapest model decides which model should answer this query.
-  const decision = await chooseModel(latestUserText(messages));
+  // Deterministic, rule-based routing (no extra model call). Picks the model
+  // per the default routing rules; falls back to a safe cheap model.
+  const route = applyRoutingRules(DEFAULT_CONFIG, latestUserText(messages));
+  const resolved = resolveById(route.modelId) ?? resolveById(DEFAULT_MODEL_ID)!;
 
   const result = streamText({
-    model: resolveModel(decision.entry),
+    model: resolved.model,
     system: SYSTEM,
     messages: await convertToModelMessages(messages),
     tools: { ...taxTools, ...customTools },
@@ -108,9 +112,9 @@ export async function POST(req: Request) {
   // Tell the client which model was chosen and why.
   return result.toUIMessageStreamResponse({
     messageMetadata: () => ({
-      model: decision.entry.label,
-      tier: decision.entry.tier,
-      reason: decision.reason,
+      model: resolved.entry.label,
+      tier: resolved.entry.tier,
+      reason: route.reason,
     }),
   });
 }
