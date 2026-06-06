@@ -4,10 +4,45 @@ import {
   smoothStream,
   stepCountIs,
   streamText,
+  tool,
+  type ToolSet,
   type UIMessage,
 } from "ai";
+import { z } from "zod";
 import { taxTools } from "@/lib/tools";
 import { makeLimiter, isAllowed, clientIp } from "@/lib/rate-limit";
+import {
+  CustomToolsSchema,
+  runCustomTool,
+  type CustomTool,
+} from "@/lib/custom-tools";
+
+// Turn validated, declarative user tool defs into AI SDK tools. execute only
+// does a keyword lookup or template fill (runCustomTool); no code is evaluated.
+function buildCustomTools(defs: CustomTool[]): ToolSet {
+  const out: ToolSet = {};
+  for (const def of defs) {
+    const shape: Record<string, z.ZodTypeAny> = {};
+    if (def.kind === "lookup") {
+      shape[def.paramName] = z
+        .string()
+        .describe(def.paramDescription ?? "lookup query");
+    } else {
+      for (const p of def.params) {
+        shape[p.name] = (p.type === "number" ? z.number() : z.string()).describe(
+          p.description ?? "",
+        );
+      }
+    }
+    out[def.name] = tool({
+      description: def.description,
+      inputSchema: z.object(shape),
+      execute: async (input) =>
+        runCustomTool(def, input as Record<string, unknown>),
+    });
+  }
+  return out;
+}
 
 // Public-use guard rails: cap requests per IP and bound the work per request so
 // the agent cannot be used to run up cost. Rate limit activates when Upstash is
@@ -58,7 +93,8 @@ export async function POST(req: Request) {
     return new Response("Too many requests, please slow down.", { status: 429 });
   }
 
-  const { messages }: { messages: UIMessage[] } = await req.json();
+  const body: { messages?: UIMessage[]; customTools?: unknown } = await req.json();
+  const messages = body.messages;
 
   // Bound input size so a single request cannot be huge.
   if (!Array.isArray(messages) || messages.length > MAX_MESSAGES) {
@@ -69,13 +105,19 @@ export async function POST(req: Request) {
     return new Response("Message too long.", { status: 400 });
   }
 
+  // Merge any user-defined tools (validated, declarative only).
+  const parsedCustom = CustomToolsSchema.safeParse(body.customTools ?? []);
+  const customTools = parsedCustom.success
+    ? buildCustomTools(parsedCustom.data)
+    : {};
+
   const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 
   const result = streamText({
     model: anthropic(model),
     system: SYSTEM,
     messages: await convertToModelMessages(messages),
-    tools: taxTools,
+    tools: { ...taxTools, ...customTools },
     stopWhen: stepCountIs(5),
     temperature: 0,
     maxOutputTokens: MAX_OUTPUT_TOKENS,

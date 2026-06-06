@@ -138,6 +138,15 @@ requirements:
     then: It shows the overall pass rate and both evaluated model names
     tags: [evals, showcase]
 
+  - id: IRAS-TOOLS-003
+    title: A visitor can create a custom tool and run it
+    category: functional
+    severity: high
+    given: The Tools page is open
+    when: The visitor builds a lookup tool with a keyword-to-answer pair and runs it
+    then: The tool is created and returns the configured answer for that keyword
+    tags: [tools, builder]
+
   - id: IRAS-RATELIMIT-001
     title: Rate limiting fails open when Upstash is not configured
     category: data
