@@ -66,6 +66,16 @@ requirements:
     tags: [chat, history]
     notes: The chat e2e stubs /api/chat.
 
+  - id: IRAS-CHAT-005
+    title: A question deep link asks it automatically
+    category: functional
+    severity: medium
+    given: The assistant is opened with a question in the URL
+    when: The page loads at /assistant with a q query parameter
+    then: The question is sent and appears as a user message
+    tags: [chat, landing]
+    notes: The chat e2e stubs /api/chat.
+
   - id: IRAS-CHAT-003
     title: A general-information disclaimer is always visible on the chat page
     category: ui

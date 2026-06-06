@@ -44,11 +44,19 @@ const STEPS = [
   },
 ];
 
+// Each links into the assistant and asks the question (via ?q=). Chosen to show
+// a different MCP tool and model route, matching the assistant's demo chips.
 const EXAMPLES = [
-  "What is the GST registration threshold?",
-  "What is the corporate income tax rate?",
-  "When is the income tax filing deadline?",
-  "What is the SRS contribution cap?",
+  { label: "What is the GST registration threshold?", q: "What is the GST registration threshold?" },
+  {
+    label: "Estimate chargeable income (120k income, 20k deductions)",
+    q: "Estimate the chargeable income for an annual income of 120000 with 20000 in deductions",
+  },
+  {
+    label: "Compare corporate vs top personal tax rates",
+    q: "Compare the corporate income tax rate versus the top personal income tax rate",
+  },
+  { label: "Should I contribute to SRS this year?", q: "Should I contribute to SRS this year?" },
 ];
 
 export default function LandingPage() {
@@ -117,13 +125,13 @@ export default function LandingPage() {
           Good first questions
         </h3>
         <div className="flex flex-wrap gap-2">
-          {EXAMPLES.map((q) => (
+          {EXAMPLES.map((ex) => (
             <Link
-              key={q}
-              href="/assistant"
+              key={ex.label}
+              href={`/assistant?q=${encodeURIComponent(ex.q)}`}
               className="rounded-full bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-[filter] hover:brightness-95"
             >
-              {q}
+              {ex.label}
             </Link>
           ))}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart } from "ai";
 import { Info, Plus, MessageSquare, Trash2 } from "lucide-react";
@@ -84,6 +84,7 @@ export default function ChatPage() {
   const [currentId, setCurrentId] = useState<string>("");
   const [hydrated, setHydrated] = useState(false);
   const [showHistory, setShowHistory] = useState(false); // mobile history panel
+  const qSentRef = useRef(false); // guards the ?q= deep link so it sends once
 
   // Load saved conversations and restore the current one.
   useEffect(() => {
@@ -103,6 +104,17 @@ export default function ChatPage() {
     }
     setHydrated(true);
   }, [setMessages]);
+
+  // Deep link: a "?q=" from the landing examples asks the question automatically.
+  useEffect(() => {
+    if (!hydrated || qSentRef.current) return;
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q && q.trim()) {
+      qSentRef.current = true;
+      window.history.replaceState(null, "", "/assistant");
+      sendMessage({ text: q.trim() });
+    }
+  }, [hydrated, sendMessage]);
 
   // Persist the active conversation when a turn settles (not mid-stream).
   useEffect(() => {

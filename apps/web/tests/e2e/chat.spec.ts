@@ -77,6 +77,28 @@ specTest(
 );
 
 specTest(
+  "IRAS-CHAT-005",
+  "A question deep link asks it automatically",
+  async ({ page }) => {
+    await page.route("**/api/chat", async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          "content-type": "text/event-stream",
+          "x-vercel-ai-ui-message-stream": "v1",
+        },
+        body: uiMessageStream(ASSISTANT_REPLY),
+      });
+    });
+    await page.goto("/assistant?q=" + encodeURIComponent("What is the GST threshold?"));
+    await expect(
+      page.locator('[data-testid="message"][data-role="user"]'),
+    ).toContainText("What is the GST threshold?");
+  },
+  { category: "functional" },
+);
+
+specTest(
   "IRAS-CHAT-002",
   "Sending a message shows the user message and the assistant reply",
   async ({ page }) => {
