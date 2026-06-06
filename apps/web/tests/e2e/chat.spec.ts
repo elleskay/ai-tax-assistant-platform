@@ -46,6 +46,10 @@ specTest(
   "Sending a message shows the user message and the assistant reply",
   async ({ page }) => {
     await page.route("**/api/chat", async (route) => {
+      // Guard against regressions where the client drops the messages payload
+      // (the API would 400). The request must carry a non-empty messages array.
+      const sent = route.request().postDataJSON();
+      expect(Array.isArray(sent?.messages) && sent.messages.length > 0).toBe(true);
       await route.fulfill({
         status: 200,
         headers: {
