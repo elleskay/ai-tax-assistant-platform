@@ -6,7 +6,7 @@
 
 [![Live](https://img.shields.io/badge/live-d1yl1box414d2i.cloudfront.net-1668B0)](https://d1yl1box414d2i.cloudfront.net) &nbsp;![Spec gate](https://img.shields.io/badge/spec%20gate-24%2F24%20covered-2e9e44) &nbsp;![Next.js](https://img.shields.io/badge/Next.js%2016-App%20Router-000000) &nbsp;![AI SDK](https://img.shields.io/badge/Vercel%20AI%20SDK-v6-0A0A0A) &nbsp;![AWS](https://img.shields.io/badge/AWS-CloudFront%20%2B%20Lambda%20%2B%20S3-FF9900) &nbsp;![IaC](https://img.shields.io/badge/IaC-CDK%20%2B%20OpenNext-4F46E5)
 
-<a href="https://d1yl1box414d2i.cloudfront.net"><img src="docs/img/hero.png" alt="IRAS Tax Assistant: Singapore tax, answered" width="100%"></a>
+<a href="https://d1yl1box414d2i.cloudfront.net"><img src="docs/img/hero-v2.png" alt="IRAS Tax Assistant: Singapore tax, answered" width="100%"></a>
 
 </div>
 
