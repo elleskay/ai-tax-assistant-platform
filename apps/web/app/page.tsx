@@ -23,6 +23,7 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Tool, ToolHeader } from "@/components/ai-elements/tool";
 import { loadCustomTools } from "@/lib/custom-tools";
+import { loadConfig } from "@/lib/routing-rules";
 
 const TOPICS = [
   { label: "GST", question: "What is the GST registration threshold?" },
@@ -47,6 +48,7 @@ export default function ChatPage() {
           messageId,
           ...body,
           customTools: loadCustomTools(),
+          routingConfig: loadConfig(),
         },
       }),
     }),

@@ -35,27 +35,57 @@ export const DEFAULT_CONFIG: RoutingConfig = {
       reason: "pii-sensitive",
     },
     {
+      id: "r-complex",
+      keywords: ["compare", "versus", " vs ", "optimi", "restructure", "trade-off", "scenario"],
+      modelId: "claude-opus-4-8",
+      reason: "complex-reasoning",
+    },
+    {
+      id: "r-calc",
+      keywords: ["calculate", "estimate", "how much", "work out", "compute"],
+      modelId: "gpt-4.1",
+      reason: "calculation",
+    },
+    {
       id: "r-personal",
-      keywords: ["should i", "will i", "my income", "my salary", "my company", "my business"],
-      modelId: "claude-haiku-4-5-20251001",
+      keywords: ["should i", "will i", "do i", "am i", "my income", "my salary", "my company", "my business"],
+      modelId: "claude-sonnet-4-6",
       reason: "personalised-advice",
     },
     {
       id: "r-factual",
-      keywords: ["what is", "what are", "deadline", "rate", "threshold", "cap"],
+      keywords: ["what is", "what are", "deadline", "rate", "threshold", "cap", "when is"],
       modelId: "gpt-4o-mini",
       reason: "factual-lookup",
     },
   ],
-  fallbackModelId: "claude-haiku-4-5-20251001",
+  fallbackModelId: "gpt-4.1-nano",
   fallbackReason: "default",
 };
 
+// Default cases are chosen so a Run routes across four different models and
+// every check is reliably gradeable.
 export const DEFAULT_CASES: TestCase[] = [
+  // factual -> GPT-4o mini
   { id: "c1", query: "What is the GST registration threshold?", expects: ["1,000,000", "turnover"] },
-  { id: "c2", query: "What is the corporate income tax rate?", expects: ["17%"] },
-  { id: "c3", query: "When is the income tax filing deadline?", expects: ["18 April"] },
-  { id: "c4", query: "What is the SRS contribution cap?", expects: ["15,300"] },
+  // calculation -> GPT-4.1
+  {
+    id: "c2",
+    query: "Estimate the chargeable income for an income of 120000 and deductions of 20000",
+    expects: ["100,000"],
+  },
+  // complex (compare/versus) -> Claude Opus 4.8
+  {
+    id: "c3",
+    query: "Compare the corporate income tax rate versus the top personal income tax rate",
+    expects: ["17%"],
+  },
+  // pii (uen) -> Claude Haiku 4.5
+  {
+    id: "c4",
+    query: "What is the GST registration threshold for a company with a UEN?",
+    expects: ["1,000,000"],
+  },
 ];
 
 export interface RouteResult {

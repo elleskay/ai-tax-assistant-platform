@@ -13,7 +13,11 @@ import { taxTools } from "@/lib/tools";
 import { makeLimiter, isAllowed, clientIp } from "@/lib/rate-limit";
 import { resolveById } from "@/lib/model-router";
 import { DEFAULT_MODEL_ID } from "@/lib/model-registry";
-import { DEFAULT_CONFIG, applyRoutingRules } from "@/lib/routing-rules";
+import {
+  DEFAULT_CONFIG,
+  applyRoutingRules,
+  RoutingConfigSchema,
+} from "@/lib/routing-rules";
 import {
   CustomToolsSchema,
   runCustomTool,
@@ -73,7 +77,11 @@ export async function POST(req: Request) {
     return new Response("Too many requests, please slow down.", { status: 429 });
   }
 
-  const body: { messages?: UIMessage[]; customTools?: unknown } = await req.json();
+  const body: {
+    messages?: UIMessage[];
+    customTools?: unknown;
+    routingConfig?: unknown;
+  } = await req.json();
   const messages = body.messages;
 
   // Bound input size so a single request cannot be huge.
@@ -91,9 +99,11 @@ export async function POST(req: Request) {
     ? buildCustomTools(parsedCustom.data)
     : {};
 
-  // Deterministic, rule-based routing (no extra model call). Picks the model
-  // per the default routing rules; falls back to a safe cheap model.
-  const route = applyRoutingRules(DEFAULT_CONFIG, latestUserText(messages));
+  // Deterministic, rule-based routing (no extra model call). Uses the visitor's
+  // configured rules from the Evals page when provided and valid, else defaults.
+  const parsedConfig = RoutingConfigSchema.safeParse(body.routingConfig);
+  const routingConfig = parsedConfig.success ? parsedConfig.data : DEFAULT_CONFIG;
+  const route = applyRoutingRules(routingConfig, latestUserText(messages));
   const resolved = resolveById(route.modelId) ?? resolveById(DEFAULT_MODEL_ID)!;
 
   const result = streamText({
