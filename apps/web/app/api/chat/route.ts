@@ -1,19 +1,17 @@
 import {
   convertToModelMessages,
-  smoothStream,
-  stepCountIs,
-  streamText,
   tool,
   type ToolSet,
   type UIMessage,
 } from "ai";
 import { z } from "zod";
 import { resolveSystemPrompt } from "@/lib/agent";
+import { runAgent } from "@/lib/run-agent";
 import { buildTaxTools } from "@/lib/tools";
 import { DEFAULT_BUILTIN_CONFIG, BuiltinToolsConfigSchema } from "@/lib/builtin-tools";
 import { makeLimiter, isAllowed, clientIp } from "@/lib/rate-limit";
 import { resolveById } from "@/lib/model-router";
-import { gatewayModel, computeCostUsd } from "@/lib/gateway";
+import { computeCostUsd } from "@/lib/gateway";
 import { DEFAULT_MODEL_ID } from "@/lib/model-registry";
 import {
   DEFAULT_CONFIG,
@@ -66,7 +64,6 @@ function buildCustomTools(defs: CustomTool[]): ToolSet {
 const limiter = makeLimiter({ tokens: 20, window: "1 m", prefix: "chat" });
 const MAX_MESSAGES = 30;
 const MAX_INPUT_CHARS = 4000;
-const MAX_OUTPUT_TOKENS = 800;
 
 // Node runtime: the HITL store uses node:fs.
 export const runtime = "nodejs";
@@ -114,20 +111,15 @@ export async function POST(req: Request) {
   const route = applyRoutingRules(routingConfig, latestUserText(messages));
   const resolved = resolveById(route.modelId) ?? resolveById(DEFAULT_MODEL_ID)!;
 
-  const result = streamText({
-    // Through the gateway: the call is timed, costed, logged, and falls back
-    // to the alternate provider if the primary throws.
-    model: gatewayModel(resolved.entry, { route: route.reason }),
+  // The agent loop (lib/run-agent.ts): bounded multi-step tool use through
+  // the gateway, which times, costs, logs, and falls back across providers.
+  const result = runAgent({
+    entry: resolved.entry,
     // Active version from the prompt store, or the compiled-in default.
     system: await resolveSystemPrompt(),
     messages: await convertToModelMessages(messages),
     tools: { ...builtinTools, ...customTools },
-    stopWhen: stepCountIs(5),
-    temperature: 0,
-    maxOutputTokens: MAX_OUTPUT_TOKENS,
-    // Even out uneven token chunks into steady word-by-word output so the answer
-    // streams smoothly instead of arriving in patches.
-    experimental_transform: smoothStream({ delayInMs: 18, chunking: "word" }),
+    meta: { route: route.reason },
   });
 
   // Tell the client which model was chosen and why; on finish, add token

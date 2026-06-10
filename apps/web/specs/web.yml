@@ -455,3 +455,32 @@ requirements:
     when: The page loads
     then: A Connect via MCP section shows the HTTP endpoint and a copyable client configuration snippet
     tags: [tools, mcp]
+
+  - id: IRAS-AGENT-001
+    title: The agent loop chains tools across steps until the answer
+    category: data
+    severity: high
+    given: A compound question that needs a lookup and then a calculation
+    when: The agent pipeline runs with a mock model that requests lookup_tax_info, then calculate_tax_estimate, then answers
+    then: All three steps execute in order, each tool runs against the real deterministic implementation, and the final text is produced
+    tags: [agent, loop]
+    notes: Vitest with an ai/test MockLanguageModelV3 driving lib/run-agent.ts directly; zero network.
+
+  - id: IRAS-AGENT-002
+    title: Assistant replies show a numbered step trace of tool use
+    category: ui
+    severity: medium
+    given: An assistant reply that used tools
+    when: The message renders
+    then: A collapsed step trace is shown; expanding it lists each step numbered with the tool name, input, and output
+    tags: [agent, trace]
+
+  - id: IRAS-AGENT-003
+    title: A multi-step reply renders the full trace and the answer
+    category: functional
+    severity: high
+    given: The assistant page with a stubbed /api/chat stream
+    when: The stream carries two chained tool invocations and a final answer
+    then: The reply shows the answer and a step trace with both tools in order, including their inputs and outputs
+    tags: [agent, journey]
+    notes: Stubbed UI message stream (no LLM); exercises the same client rendering path as a live multi-step run.
