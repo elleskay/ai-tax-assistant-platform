@@ -407,3 +407,51 @@ requirements:
     tags: [tools, sandbox, journey]
     depends_on: [IRAS-SANDBOX-001]
     notes: Deterministic, no LLM. The run goes through POST /api/tools/run against the real sandbox.
+
+  - id: IRAS-MCP-001
+    title: The MCP endpoint answers a JSON-RPC initialize
+    category: functional
+    severity: high
+    given: The Streamable HTTP MCP endpoint at /api/mcp
+    when: A client POSTs a JSON-RPC initialize request
+    then: The response carries the server name and a protocol version
+    tags: [mcp, server]
+    notes: Streamable HTTP may frame single replies as SSE; the test parses both JSON and event-stream bodies.
+
+  - id: IRAS-MCP-002
+    title: tools/list exposes the four tax tools with schemas
+    category: functional
+    severity: high
+    given: The MCP endpoint is reachable
+    when: A client requests tools/list
+    then: lookup_tax_info, calculate_tax_estimate, escalate_to_human, and run_javascript are listed, each with an input schema
+    tags: [mcp, tools]
+
+  - id: IRAS-MCP-003
+    title: Calling lookup_tax_info over MCP returns the GST threshold
+    category: functional
+    severity: high
+    given: The MCP endpoint is reachable
+    when: A client calls the lookup_tax_info tool with topic GST via tools/call
+    then: The tool result text includes the SGD 1,000,000 registration threshold
+    tags: [mcp, journey]
+    notes: Full over-the-wire journey against the real endpoint and the real tax data; no LLM involved.
+
+  - id: IRAS-MCP-004
+    title: Escalation over MCP requires the API key when one is configured
+    category: security
+    severity: high
+    given: MCP_API_KEY is set in the environment
+    when: tools/call escalate_to_human arrives without (or with a wrong) bearer token
+    then: The request is rejected with 401 before reaching the tool, using a constant-time comparison; with no MCP_API_KEY configured the tool stays open
+    tags: [mcp, security]
+    notes: Vitest with stubbed env against the route handler and the pure guard, no live server needed.
+
+  - id: IRAS-TOOLS-006
+    title: The Tools page shows how to connect via MCP
+    category: ui
+    severity: medium
+    given: A visitor opens the Tools page
+    when: The page loads
+    then: A Connect via MCP section shows the HTTP endpoint and a copyable client configuration snippet
+    tags: [tools, mcp]

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, Calculator, UserCheck, Wrench, Plus, Trash2, Play, Sparkles, RotateCcw } from "lucide-react";
+import { Search, Calculator, UserCheck, Wrench, Plus, Trash2, Play, Plug, Sparkles, RotateCcw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { lookupFromPairs, formatEstimate } from "@/lib/tax";
@@ -36,7 +36,70 @@ export default function ToolsPage() {
 
       <BuiltinTools />
       <CustomTools />
+      <McpConnect />
     </main>
+  );
+}
+
+/* ---------- connect via MCP ---------- */
+
+function McpConnect() {
+  const [origin, setOrigin] = useState("https://your-deployment");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const endpoint = `${origin}/api/mcp`;
+  const config = JSON.stringify(
+    { mcpServers: { "iras-tax": { type: "http", url: endpoint } } },
+    null,
+    2,
+  );
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(config);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable (permissions, non-secure context): leave the
+      // snippet selectable instead.
+    }
+  }
+
+  return (
+    <section className="mt-10" data-testid="mcp-connect">
+      <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <Plug className="h-4 w-4" /> Connect via MCP
+      </h3>
+      <Card className="shadow-soft">
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground">
+            These tools are also served over the Model Context Protocol, so any
+            MCP client (Claude Code, the MCP inspector) can call them directly.
+            The Streamable HTTP endpoint is:
+          </p>
+          <code data-testid="mcp-endpoint" className="w-fit rounded-md border bg-secondary/40 px-2 py-1 font-mono text-sm text-foreground">
+            {endpoint}
+          </code>
+          <p className="text-sm text-muted-foreground">
+            Add it to a client with this <span className="font-mono">.mcp.json</span> entry:
+          </p>
+          <pre data-testid="mcp-config" className="overflow-x-auto rounded-md border bg-secondary/40 p-3 font-mono text-xs text-foreground">
+            {config}
+          </pre>
+          <div className="flex items-center gap-3">
+            <Button onClick={copy}>{copied ? "Copied" : "Copy config"}</Button>
+            <p className="text-xs text-muted-foreground">
+              lookup and calculate are public (rate limited); escalation requires
+              a bearer token when the server sets MCP_API_KEY.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
   );
 }
 
