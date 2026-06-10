@@ -8,7 +8,7 @@ import {
   type UIMessage,
 } from "ai";
 import { z } from "zod";
-import { SYSTEM } from "@/lib/agent";
+import { resolveSystemPrompt } from "@/lib/agent";
 import { buildTaxTools } from "@/lib/tools";
 import { DEFAULT_BUILTIN_CONFIG, BuiltinToolsConfigSchema } from "@/lib/builtin-tools";
 import { makeLimiter, isAllowed, clientIp } from "@/lib/rate-limit";
@@ -120,7 +120,8 @@ export async function POST(req: Request) {
     // Through the gateway: the call is timed, costed, logged, and falls back
     // to the alternate provider if the primary throws.
     model: gatewayModel(resolved.entry, { route: route.reason }),
-    system: SYSTEM,
+    // Active version from the prompt store, or the compiled-in default.
+    system: await resolveSystemPrompt(),
     messages: await convertToModelMessages(messages),
     tools: { ...builtinTools, ...customTools },
     stopWhen: stepCountIs(5),
