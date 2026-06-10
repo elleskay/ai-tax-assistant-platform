@@ -13,6 +13,7 @@ import { buildTaxTools } from "@/lib/tools";
 import { DEFAULT_BUILTIN_CONFIG, BuiltinToolsConfigSchema } from "@/lib/builtin-tools";
 import { makeLimiter, isAllowed, clientIp } from "@/lib/rate-limit";
 import { resolveById } from "@/lib/model-router";
+import { gatewayModel, computeCostUsd } from "@/lib/gateway";
 import { DEFAULT_MODEL_ID } from "@/lib/model-registry";
 import {
   DEFAULT_CONFIG,
@@ -116,7 +117,9 @@ export async function POST(req: Request) {
   const resolved = resolveById(route.modelId) ?? resolveById(DEFAULT_MODEL_ID)!;
 
   const result = streamText({
-    model: resolved.model,
+    // Through the gateway: the call is timed, costed, logged, and falls back
+    // to the alternate provider if the primary throws.
+    model: gatewayModel(resolved.entry, { route: route.reason }),
     system: SYSTEM,
     messages: await convertToModelMessages(messages),
     tools: { ...builtinTools, ...customTools },
@@ -128,12 +131,23 @@ export async function POST(req: Request) {
     experimental_transform: smoothStream({ delayInMs: 18, chunking: "word" }),
   });
 
-  // Tell the client which model was chosen and why.
+  // Tell the client which model was chosen and why; on finish, add token
+  // usage and the cost computed from the registry list prices.
   return result.toUIMessageStreamResponse({
-    messageMetadata: () => ({
-      model: resolved.entry.label,
-      tier: resolved.entry.tier,
-      reason: route.reason,
-    }),
+    messageMetadata: ({ part }) => {
+      const base = {
+        model: resolved.entry.label,
+        tier: resolved.entry.tier,
+        reason: route.reason,
+      };
+      if (part.type !== "finish") return base;
+      const input = part.totalUsage.inputTokens ?? 0;
+      const output = part.totalUsage.outputTokens ?? 0;
+      return {
+        ...base,
+        usage: { input, output },
+        costUsd: computeCostUsd(resolved.entry, input, output),
+      };
+    },
   });
 }

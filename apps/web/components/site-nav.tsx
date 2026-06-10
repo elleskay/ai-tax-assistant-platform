@@ -2,12 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Landmark, MessageSquare, Wrench, BarChart3, ShieldCheck } from "lucide-react";
+import {
+  Landmark,
+  MessageSquare,
+  Wrench,
+  BarChart3,
+  ArrowRightLeft,
+  ShieldCheck,
+} from "lucide-react";
 
 const LINKS = [
   { href: "/assistant", label: "Assistant", icon: MessageSquare },
   { href: "/tools", label: "MCP tools", icon: Wrench },
   { href: "/evals", label: "Evals", icon: BarChart3 },
+  { href: "/gateway", label: "Gateway", icon: ArrowRightLeft },
   { href: "/admin", label: "Advisor queue", icon: ShieldCheck },
 ];
 

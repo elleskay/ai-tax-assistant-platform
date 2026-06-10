@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { anthropic, agentModel, SYSTEM } from "@/lib/agent";
 import { resolveById } from "@/lib/model-router";
+import { gatewayModel } from "@/lib/gateway";
+import { findModel } from "@/lib/model-registry";
 import { taxTools } from "@/lib/tools";
 import { makeLimiter, isAllowed, clientIp } from "@/lib/rate-limit";
 
@@ -29,9 +31,16 @@ export async function POST(req: Request) {
   }
   const { question, expects, modelId } = parsed.data;
 
-  const resolved = modelId ? resolveById(modelId) : null;
-  const model = resolved ? resolved.model : anthropic(agentModel());
-  const modelLabel = resolved ? resolved.entry.label : agentModel();
+  // Resolve through the gateway so eval calls are logged and costed like chat
+  // calls. Falls back to the raw client only if the model is not in the
+  // registry (e.g. an ANTHROPIC_MODEL env override).
+  const entry = modelId
+    ? (resolveById(modelId)?.entry ?? null)
+    : (findModel(agentModel()) ?? null);
+  const model = entry
+    ? gatewayModel(entry, { route: "eval" })
+    : anthropic(agentModel());
+  const modelLabel = entry ? entry.label : agentModel();
 
   // Same prompt and tools as the live assistant, so the check reflects the real
   // thing. Non-streaming: we just need the final text to grade.
