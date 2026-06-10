@@ -20,11 +20,8 @@ import {
   applyRoutingRules,
   RoutingConfigSchema,
 } from "@/lib/routing-rules";
-import {
-  CustomToolsSchema,
-  runCustomTool,
-  type CustomTool,
-} from "@/lib/custom-tools";
+import { CustomToolsSchema, type CustomTool } from "@/lib/custom-tools";
+import { executeCustomTool } from "@/lib/run-tool";
 
 function latestUserText(messages: UIMessage[]): string {
   const last = [...messages].reverse().find((m) => m.role === "user");
@@ -35,8 +32,9 @@ function latestUserText(messages: UIMessage[]): string {
     .join(" ");
 }
 
-// Turn validated, declarative user tool defs into AI SDK tools. execute only
-// does a keyword lookup or template fill (runCustomTool); no code is evaluated.
+// Turn validated user tool defs into AI SDK tools. Declarative kinds do a
+// keyword lookup or template fill; code tools run in the QuickJS sandbox
+// (hard time/memory limits, no host globals). See lib/run-tool.ts.
 function buildCustomTools(defs: CustomTool[]): ToolSet {
   const out: ToolSet = {};
   for (const def of defs) {
@@ -56,7 +54,7 @@ function buildCustomTools(defs: CustomTool[]): ToolSet {
       description: def.description,
       inputSchema: z.object(shape),
       execute: async (input) =>
-        runCustomTool(def, input as Record<string, unknown>),
+        executeCustomTool(def, input as Record<string, unknown>),
     });
   }
   return out;

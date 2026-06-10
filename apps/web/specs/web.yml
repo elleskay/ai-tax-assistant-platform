@@ -360,3 +360,50 @@ requirements:
     when: A write request carries an invalid name, empty content, or an unknown version activation
     then: The API rejects it with 400 (404 for unknown activation targets) and never persists the payload; writes share the rate limiter, which fails open only when Upstash is not configured
     tags: [prompts, security]
+
+  - id: IRAS-SANDBOX-001
+    title: Sandboxed code tools run user JavaScript and return a JSON result
+    category: data
+    severity: high
+    given: A code custom tool whose run(input) returns a JSON-serializable value
+    when: runSandboxed executes it with an input object
+    then: It returns ok true with the function's result, parsed from JSON, and a duration
+    tags: [sandbox, tools]
+
+  - id: IRAS-SANDBOX-002
+    title: Runaway sandbox code is interrupted by hard time and memory limits
+    category: security
+    severity: critical
+    given: Code containing an infinite loop or an unbounded allocation
+    when: runSandboxed executes it
+    then: The infinite loop is interrupted at the deadline (about one second) and the allocation bomb fails at the memory cap (about 32MB); both return ok false with a safe error message instead of hanging or crashing the process
+    tags: [sandbox, security]
+
+  - id: IRAS-SANDBOX-003
+    title: The sandbox exposes no host capabilities
+    category: security
+    severity: critical
+    given: Code that probes for fetch, require, process, fs, or other host globals
+    when: runSandboxed executes it
+    then: None of the host capabilities exist inside the sandbox; the probes find no escape surface
+    tags: [sandbox, security]
+
+  - id: IRAS-SANDBOX-004
+    title: Sandbox output is capped with a truncation marker
+    category: data
+    severity: medium
+    given: Code whose result serializes larger than the output cap (about 8KB)
+    when: runSandboxed executes it
+    then: The returned result is truncated to the cap and carries a truncation marker
+    tags: [sandbox, limits]
+
+  - id: IRAS-TOOLS-005
+    title: A visitor can build a sandboxed code tool and run it end to end
+    category: functional
+    severity: high
+    given: The Tools page is open
+    when: The visitor creates a code tool with a run(input) function and runs it with an input
+    then: The tool executes server-side in the sandbox and the computed result is shown
+    tags: [tools, sandbox, journey]
+    depends_on: [IRAS-SANDBOX-001]
+    notes: Deterministic, no LLM. The run goes through POST /api/tools/run against the real sandbox.
