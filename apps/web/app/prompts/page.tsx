@@ -162,7 +162,7 @@ export default function PromptsPage() {
     <div className="mx-auto w-full max-w-5xl px-4 py-8 pb-16">
       <div className="mb-6">
         <h2 className="flex items-center gap-2 text-xl font-semibold text-navy">
-          <FileText className="h-5 w-5" /> Prompt management
+          <FileText className="h-5 w-5" /> Prompts
         </h2>
         <p className="text-sm text-muted-foreground">
           The assistant&apos;s system prompt is versioned here: versions are

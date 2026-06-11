@@ -7,6 +7,7 @@ import {
   Inbox,
   Loader2,
   MessageSquareQuote,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -68,9 +69,11 @@ export default function AdminPage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 pb-16">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-navy">Advisor escalation queue</h2>
+        <h2 className="flex items-center gap-2 text-xl font-semibold text-navy">
+          <ShieldCheck className="h-5 w-5" /> Advisor queue
+        </h2>
         <p className="text-sm text-muted-foreground">
-          Questions the assistant routed to a human
+          Questions the assistant escalated to a human, reviewed and resolved here.
         </p>
       </div>
 

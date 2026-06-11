@@ -7,6 +7,10 @@ import { listGatewayCalls } from "@/lib/gateway-store";
 // Reads the request log at request time, never at build time.
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Gateway - IRAS Tax Assistant",
+};
+
 function formatTime(iso: string) {
   try {
     return new Date(iso).toLocaleString("en-SG", {
@@ -31,7 +35,7 @@ export default async function GatewayPage() {
     <div className="mx-auto w-full max-w-5xl px-4 py-8 pb-16">
       <div className="mb-6">
         <h2 className="flex items-center gap-2 text-xl font-semibold text-navy">
-          <ArrowRightLeft className="h-5 w-5" /> Model gateway
+          <ArrowRightLeft className="h-5 w-5" /> Gateway
         </h2>
         <p className="text-sm text-muted-foreground">
           Every model call flows through one gateway that records latency,
