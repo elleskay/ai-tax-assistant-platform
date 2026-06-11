@@ -10,6 +10,7 @@ import {
   ArrowRightLeft,
   FileText,
   ShieldCheck,
+  BookOpen,
 } from "lucide-react";
 
 const LINKS = [
@@ -19,6 +20,7 @@ const LINKS = [
   { href: "/gateway", label: "Gateway", icon: ArrowRightLeft },
   { href: "/prompts", label: "Prompts", icon: FileText },
   { href: "/admin", label: "Advisor queue", icon: ShieldCheck },
+  { href: "/guide", label: "Guide", icon: BookOpen },
 ];
 
 export function SiteNav() {

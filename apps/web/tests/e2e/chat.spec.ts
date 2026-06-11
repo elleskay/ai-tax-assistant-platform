@@ -89,6 +89,30 @@ specTest(
 );
 
 specTest(
+  "IRAS-CHAT-006",
+  "Assistant example chips cover each scenario",
+  async ({ page }) => {
+    await page.goto("/assistant");
+    // Label and route hint per scenario: lookup, calculation, multi-step,
+    // complex reasoning, escalation, PII.
+    const chips: [string, string][] = [
+      ["GST", "lookup tool"],
+      ["Income tax", "estimate tool"],
+      ["Multi-step", "two tools chained, step trace"],
+      ["Corporate tax", "complex reasoning"],
+      ["SRS", "escalates to a human"],
+      ["PII", "pii-sensitive route"],
+    ];
+    for (const [label, hint] of chips) {
+      const chip = page.getByRole("button", { name: new RegExp(`^${label}\\b`) });
+      await expect(chip).toBeVisible();
+      await expect(chip).toContainText(hint);
+    }
+  },
+  { category: "ui" },
+);
+
+specTest(
   "IRAS-CHAT-003",
   "A general-information disclaimer is always visible on the chat page",
   async ({ page }) => {

@@ -34,11 +34,60 @@ specTest(
   async ({ page }) => {
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Primary" });
-    for (const label of ["Assistant", "MCP tools", "Evals", "Gateway", "Prompts", "Advisor queue"]) {
+    for (const label of ["Assistant", "MCP tools", "Evals", "Gateway", "Prompts", "Advisor queue", "Guide"]) {
       await expect(nav.getByRole("link", { name: label })).toBeVisible();
     }
   },
   { category: "functional" },
+);
+
+specTest(
+  "IRAS-LANDING-002",
+  "Landing example questions exercise the different scenarios",
+  async ({ page }) => {
+    await page.goto("/");
+    // Six scenario chips, each deep-linking into the assistant via ?q=.
+    const chips = [
+      /GST registration threshold/,
+      /Estimate chargeable income/,
+      /Multi-step/,
+      /corporate vs top personal/,
+      /SRS/,
+      /PII routing/,
+    ];
+    for (const name of chips) {
+      const link = page.getByRole("link", { name });
+      await expect(link).toBeVisible();
+      expect(await link.getAttribute("href")).toContain("/assistant?q=");
+    }
+  },
+  { category: "ui" },
+);
+
+specTest(
+  "IRAS-GUIDE-001",
+  "The guide page documents how to use every page",
+  async ({ page }) => {
+    await page.goto("/guide");
+    await expect(
+      page.getByRole("heading", { name: "How to use everything" }),
+    ).toBeVisible();
+    // One step-by-step section per page, plus connecting over MCP.
+    for (const section of [
+      "Assistant",
+      "MCP tools",
+      "Evals",
+      "Gateway",
+      "Prompts",
+      "Advisor queue",
+      "Connect over MCP",
+    ]) {
+      await expect(
+        page.getByRole("heading", { name: section, exact: true }),
+      ).toBeVisible();
+    }
+  },
+  { category: "ui" },
 );
 
 specTest(

@@ -8,6 +8,7 @@ import {
   Info,
   Gauge,
   FileText,
+  BookOpen,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -60,8 +61,10 @@ const STEPS = [
   },
 ];
 
-// Each links into the assistant and asks the question (via ?q=). Chosen to show
-// a different MCP tool and model route, matching the assistant's demo chips.
+// Each links into the assistant and asks the question (via ?q=). Together they
+// cover every scenario: lookup, calculation, the multi-step agent loop with its
+// step trace, complex reasoning, human escalation, and PII routing. They match
+// the assistant's demo chips.
 const EXAMPLES = [
   { label: "What is the GST registration threshold?", q: "What is the GST registration threshold?" },
   {
@@ -69,10 +72,18 @@ const EXAMPLES = [
     q: "Estimate the chargeable income for an annual income of 120000 with 20000 in deductions",
   },
   {
+    label: "Multi-step: GST threshold + my estimate (watch the step trace)",
+    q: "What is the GST registration threshold, and calculate my chargeable income for an income of 120000 with 20000 in deductions",
+  },
+  {
     label: "Compare corporate vs top personal tax rates",
     q: "Compare the corporate income tax rate versus the top personal income tax rate",
   },
   { label: "Should I contribute to SRS this year?", q: "Should I contribute to SRS this year?" },
+  {
+    label: "PII routing: a question containing an NRIC",
+    q: "My NRIC is S1234567D, do I need to file a tax return?",
+  },
 ];
 
 export default function LandingPage() {
@@ -107,6 +118,12 @@ export default function LandingPage() {
             className="inline-flex min-h-11 items-center gap-2 rounded-lg border bg-card px-5 font-medium text-foreground transition-colors hover:bg-accent"
           >
             <Wrench className="h-4 w-4" /> Explore the tools
+          </Link>
+          <Link
+            href="/guide"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border bg-card px-5 font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            <BookOpen className="h-4 w-4" /> Read the guide
           </Link>
         </div>
       </section>

@@ -137,7 +137,7 @@ requirements:
     severity: high
     given: A visitor is anywhere on the site
     when: They look at the primary navigation
-    then: There are links to Assistant, MCP tools, Evals, Gateway, Prompts, and the Advisor queue
+    then: There are links to Assistant, MCP tools, Evals, Gateway, Prompts, the Advisor queue, and the Guide
     tags: [nav, showcase]
 
   - id: IRAS-TOOLS-001
@@ -455,6 +455,43 @@ requirements:
     when: The page loads
     then: A Connect via MCP section shows the HTTP endpoint and a copyable client configuration snippet
     tags: [tools, mcp]
+
+  - id: IRAS-TOOLS-007
+    title: Example tools are preloaded and runnable on first visit
+    category: functional
+    severity: high
+    given: A first-time visitor with no saved custom tools
+    when: They open the Tools page
+    then: One example tool per kind (lookup, template, code) is listed, and running the example code tool returns its computed result from the server sandbox
+    tags: [tools, examples, journey]
+    notes: Deterministic, no LLM. The code example runs through POST /api/tools/run against the real sandbox. Examples behave like user tools (editable, deletable); any save replaces the seed.
+
+  - id: IRAS-CHAT-006
+    title: Assistant example chips cover each scenario
+    category: ui
+    severity: medium
+    given: A visitor opens the assistant with no conversation
+    when: The empty state renders
+    then: Example chips cover a factual lookup, a calculation, a multi-step two-tool question, a complex comparison, a personalised escalation, and a PII-sensitive question, each with its route hint
+    tags: [chat, examples]
+
+  - id: IRAS-LANDING-002
+    title: Landing example questions exercise the different scenarios
+    category: ui
+    severity: medium
+    given: A visitor opens the home page
+    when: The good-first-questions section renders
+    then: The example links cover lookup, calculation, multi-step, comparison, escalation, and PII scenarios, each deep-linking into the assistant
+    tags: [landing, examples]
+
+  - id: IRAS-GUIDE-001
+    title: The guide page documents how to use every page
+    category: ui
+    severity: medium
+    given: A visitor opens the guide page
+    when: The page loads
+    then: There is a step-by-step section for each showcase page (Assistant, MCP tools, Evals, Gateway, Prompts, Advisor queue) plus connecting over MCP
+    tags: [guide, docs]
 
   - id: IRAS-EVAL-009
     title: A failed eval case explains why it failed
