@@ -22,6 +22,7 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { StepTrace } from "@/components/ai-elements/step-trace";
+import { PageGuide } from "@/components/page-guide";
 import type { ToolPart } from "@/components/ai-elements/tool";
 import { loadCustomTools } from "@/lib/custom-tools";
 import { loadConfig } from "@/lib/routing-rules";
@@ -411,6 +412,7 @@ export default function ChatPage() {
               ))}
             </div>
             <div className="w-full max-w-xl">{composer(true)}</div>
+            <PageGuide page="assistant" className="w-full max-w-xl bg-card" />
           </main>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">

@@ -137,7 +137,7 @@ requirements:
     severity: high
     given: A visitor is anywhere on the site
     when: They look at the primary navigation
-    then: There are links to Assistant, MCP tools, Evals, Gateway, Prompts, the Advisor queue, and the Guide
+    then: There are links to Assistant, MCP tools, Evals, Gateway, Prompts, and the Advisor queue
     tags: [nav, showcase]
 
   - id: IRAS-TOOLS-001
@@ -485,12 +485,12 @@ requirements:
     tags: [landing, examples]
 
   - id: IRAS-GUIDE-001
-    title: The guide page documents how to use every page
+    title: Every feature page has a follow-along guide at the top
     category: ui
     severity: medium
-    given: A visitor opens the guide page
+    given: A first-time visitor opens any feature page (assistant, tools, evals, gateway, prompts, admin)
     when: The page loads
-    then: There is a step-by-step section for each showcase page (Assistant, MCP tools, Evals, Gateway, Prompts, Advisor queue) plus connecting over MCP
+    then: A how-to-use panel near the top lists numbered follow-along steps for that page; collapsing it is remembered, so it stays collapsed on the next visit
     tags: [guide, docs]
 
   - id: IRAS-EVAL-009

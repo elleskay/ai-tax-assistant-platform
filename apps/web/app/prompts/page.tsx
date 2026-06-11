@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { PageGuide } from "@/components/page-guide";
 
 interface PromptVersion {
   version: number;
@@ -170,6 +171,8 @@ export default function PromptsPage() {
           when none exists).
         </p>
       </div>
+
+      <PageGuide page="prompts" className="mb-6" />
 
       <main id="main" className="flex flex-col gap-8">
         {/* Existing prompts */}

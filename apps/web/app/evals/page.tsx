@@ -1,5 +1,6 @@
 import { BarChart3 } from "lucide-react";
 import { EvalsWorkbench } from "@/components/evals-workbench";
+import { PageGuide } from "@/components/page-guide";
 
 export const metadata = {
   title: "Evaluations - IRAS Tax Assistant",
@@ -17,6 +18,8 @@ export default function EvalsPage() {
         router is deterministic and free; running a case calls the routed model and
         grades the answer against your keywords. Edits stay in your browser.
       </p>
+      <PageGuide page="evals" className="mt-4" />
+
       <div className="mt-6">
         <EvalsWorkbench />
       </div>

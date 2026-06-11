@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageGuide } from "@/components/page-guide";
 
 interface Escalation {
   id: number;
@@ -72,6 +73,8 @@ export default function AdminPage() {
           Questions the assistant routed to a human
         </p>
       </div>
+
+      <PageGuide page="admin" className="mb-6" />
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 gap-3">

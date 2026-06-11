@@ -8,7 +8,6 @@ import {
   Info,
   Gauge,
   FileText,
-  BookOpen,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -118,12 +117,6 @@ export default function LandingPage() {
             className="inline-flex min-h-11 items-center gap-2 rounded-lg border bg-card px-5 font-medium text-foreground transition-colors hover:bg-accent"
           >
             <Wrench className="h-4 w-4" /> Explore the tools
-          </Link>
-          <Link
-            href="/guide"
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg border bg-card px-5 font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            <BookOpen className="h-4 w-4" /> Read the guide
           </Link>
         </div>
       </section>

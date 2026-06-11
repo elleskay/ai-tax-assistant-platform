@@ -1,4 +1,5 @@
 import { ArrowRightLeft, Inbox } from "lucide-react";
+import { PageGuide } from "@/components/page-guide";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { listGatewayCalls } from "@/lib/gateway-store";
@@ -38,6 +39,8 @@ export default async function GatewayPage() {
           to the alternate provider on errors. The most recent 50 calls:
         </p>
       </div>
+
+      <PageGuide page="gateway" className="mb-6" />
 
       <main id="main">
         {calls.length === 0 ? (

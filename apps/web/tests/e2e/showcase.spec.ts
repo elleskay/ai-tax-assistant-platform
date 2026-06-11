@@ -34,7 +34,7 @@ specTest(
   async ({ page }) => {
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Primary" });
-    for (const label of ["Assistant", "MCP tools", "Evals", "Gateway", "Prompts", "Advisor queue", "Guide"]) {
+    for (const label of ["Assistant", "MCP tools", "Evals", "Gateway", "Prompts", "Advisor queue"]) {
       await expect(nav.getByRole("link", { name: label })).toBeVisible();
     }
   },
@@ -66,26 +66,25 @@ specTest(
 
 specTest(
   "IRAS-GUIDE-001",
-  "The guide page documents how to use every page",
+  "Every feature page has a follow-along guide at the top",
   async ({ page }) => {
-    await page.goto("/guide");
-    await expect(
-      page.getByRole("heading", { name: "How to use everything" }),
-    ).toBeVisible();
-    // One step-by-step section per page, plus connecting over MCP.
-    for (const section of [
-      "Assistant",
-      "MCP tools",
-      "Evals",
-      "Gateway",
-      "Prompts",
-      "Advisor queue",
-      "Connect over MCP",
-    ]) {
-      await expect(
-        page.getByRole("heading", { name: section, exact: true }),
-      ).toBeVisible();
+    // Expanded with numbered steps on every feature page, first visit.
+    for (const path of ["/assistant", "/tools", "/evals", "/gateway", "/prompts", "/admin"]) {
+      await page.goto(path);
+      const guide = page.getByTestId("page-guide");
+      await expect(guide).toBeVisible();
+      await expect(guide).toContainText("How to use this page");
+      expect(await guide.locator("ol li").count()).toBeGreaterThanOrEqual(3);
     }
+
+    // Collapsing is remembered across a reload.
+    await page.goto("/tools");
+    const guide = page.getByTestId("page-guide");
+    await guide.getByRole("button", { name: /How to use this page/ }).click();
+    await expect(guide.locator("ol")).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByTestId("page-guide")).toBeVisible();
+    await expect(page.getByTestId("page-guide").locator("ol")).toHaveCount(0);
   },
   { category: "ui" },
 );

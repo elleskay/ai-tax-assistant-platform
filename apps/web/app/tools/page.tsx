@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Search, Calculator, UserCheck, Wrench, Plus, Trash2, Play, Plug, Sparkles, RotateCcw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageGuide } from "@/components/page-guide";
 import { lookupFromPairs, formatEstimate } from "@/lib/tax";
 import {
   type BuiltinToolsConfig,
@@ -33,6 +34,8 @@ export default function ToolsPage() {
         description, and edit the lookup facts. Your edits apply to the assistant.
         You can also build your own tools below.
       </p>
+
+      <PageGuide page="tools" className="mt-4" />
 
       <BuiltinTools />
       <CustomTools />
