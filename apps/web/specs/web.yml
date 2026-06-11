@@ -467,12 +467,12 @@ requirements:
     notes: Deterministic, no LLM. The code example runs through POST /api/tools/run against the real sandbox. Examples behave like user tools (editable, deletable); any save replaces the seed.
 
   - id: IRAS-CHAT-006
-    title: Assistant example chips cover each scenario
+    title: Assistant example chips cover each scenario and stay available mid-chat
     category: ui
     severity: medium
-    given: A visitor opens the assistant with no conversation
-    when: The empty state renders
-    then: Example chips cover a factual lookup, a calculation, a multi-step two-tool question, a complex comparison, a personalised escalation, and a PII-sensitive question, each with its route hint
+    given: A visitor on the assistant page
+    when: The empty state renders, and again after a conversation has started
+    then: Example chips cover a factual lookup, a calculation, a multi-step two-tool question, a complex comparison, a personalised escalation, and a PII-sensitive question (with route hints in the empty state); during a conversation the chips remain above the composer so each scenario can be tried in the same chat
     tags: [chat, examples]
 
   - id: IRAS-LANDING-002

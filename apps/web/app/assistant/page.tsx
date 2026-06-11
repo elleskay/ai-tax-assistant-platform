@@ -479,6 +479,21 @@ export default function ChatPage() {
                     Something went wrong reaching the assistant. Please try again.
                   </p>
                 ) : null}
+                {/* Scenario chips stay available mid-chat so each one can be
+                    tried in the same conversation. */}
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {TOPICS.map((t) => (
+                    <button
+                      key={t.label}
+                      type="button"
+                      onClick={() => submit(t.question)}
+                      title={`${t.question} (${t.hint})`}
+                      className="cursor-pointer rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground transition-[filter] hover:brightness-95"
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
                 {composer(false)}
               </div>
             </div>
