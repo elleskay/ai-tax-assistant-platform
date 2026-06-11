@@ -456,6 +456,16 @@ requirements:
     then: A Connect via MCP section shows the HTTP endpoint and a copyable client configuration snippet
     tags: [tools, mcp]
 
+  - id: IRAS-EVAL-009
+    title: A failed eval case explains why it failed
+    category: functional
+    severity: medium
+    given: Eval results containing failed cases
+    when: The results render after a run
+    then: A keyword-graded failure lists the missed keywords, and a judge-graded failure shows the judge's score and rationale
+    tags: [evals, workbench]
+    notes: /api/eval is stubbed (it calls the LLM); the miss list and the judge verdict come from the stubbed responses.
+
   - id: IRAS-AGENT-001
     title: The agent loop chains tools across steps until the answer
     category: data
