@@ -2,11 +2,11 @@
 
 # Unofficial IRAS Tax Assistant
 
-**A conversational Singapore tax assistant that answers GST, income tax, corporate tax, and SRS questions in plain language, calls real MCP-style tools, routes every query to the cheapest capable model across OpenAI and Anthropic, and escalates anything personal to a human.**
+**A multi-step Singapore tax agent that answers GST, income tax, corporate tax, and SRS questions in plain language. It chains real MCP tools with a visible step trace, routes every query to the cheapest capable model across OpenAI and Anthropic through an observed gateway, runs visitor-built tools in a secure sandbox, and escalates anything personal to a human.**
 
 [![Live](https://img.shields.io/badge/live-d1yl1box414d2i.cloudfront.net-1668B0)](https://d1yl1box414d2i.cloudfront.net) &nbsp;![Spec gate](https://img.shields.io/badge/spec%20gate-57%2F57%20covered-2e9e44) &nbsp;![Next.js](https://img.shields.io/badge/Next.js%2016-App%20Router-000000) &nbsp;![AI SDK](https://img.shields.io/badge/Vercel%20AI%20SDK-v6-0A0A0A) &nbsp;![AWS](https://img.shields.io/badge/AWS-CloudFront%20%2B%20Lambda%20%2B%20S3-FF9900) &nbsp;![IaC](https://img.shields.io/badge/IaC-CDK%20%2B%20OpenNext-4F46E5)
 
-<a href="https://d1yl1box414d2i.cloudfront.net"><img src="docs/img/hero-v3.png" alt="IRAS Tax Assistant: Singapore tax, answered" width="100%"></a>
+<a href="https://d1yl1box414d2i.cloudfront.net"><img src="docs/img/hero-v4.png" alt="IRAS Tax Assistant: Singapore tax, answered by a multi-step agent" width="100%"></a>
 
 </div>
 
