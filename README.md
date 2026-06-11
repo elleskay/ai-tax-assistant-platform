@@ -2,7 +2,7 @@
 
 # Unofficial IRAS Tax Assistant
 
-**A multi-step Singapore tax agent that answers GST, income tax, corporate tax, and SRS questions in plain language. It chains real MCP tools with a visible step trace, routes every query to the cheapest capable model across OpenAI and Anthropic through an observed gateway, runs visitor-built tools in a secure sandbox, and escalates anything personal to a human.**
+**A multi-step Singapore tax agent that answers GST, income tax, corporate tax, and SRS questions in plain language. It chains real MCP tools with a visible step trace, applies cost-aware model routing across OpenAI and Anthropic through an observed gateway, runs visitor-built tools in a secure sandbox, and escalates anything personal to a human.**
 
 [![Live](https://img.shields.io/badge/live-d1yl1box414d2i.cloudfront.net-1668B0)](https://d1yl1box414d2i.cloudfront.net) &nbsp;![Spec gate](https://img.shields.io/badge/spec%20gate-57%2F57%20covered-2e9e44) &nbsp;![Next.js](https://img.shields.io/badge/Next.js%2016-App%20Router-000000) &nbsp;![AI SDK](https://img.shields.io/badge/Vercel%20AI%20SDK-v6-0A0A0A) &nbsp;![AWS](https://img.shields.io/badge/AWS-CloudFront%20%2B%20Lambda%20%2B%20S3-FF9900) &nbsp;![IaC](https://img.shields.io/badge/IaC-CDK%20%2B%20OpenNext-4F46E5)
 
@@ -41,7 +41,7 @@
 Three command-line projects, an MCP tool server, a tax agent, and an LLM eval harness, made usable by anyone in a browser. No install, no terminal, no API key of your own.
 
 - **Assistant.** Ask a Singapore tax question. It grounds factual answers in IRAS facts via a tool, can work out a rough chargeable-income estimate, and routes anything personal to a human advisor. Conversations have history and a New chat button, stored per browser.
-- **Cheapest capable routing.** A deterministic rule engine picks a model per query from six models across OpenAI and Anthropic, so a simple lookup uses a cheap model and a complex comparison uses a premium one. Each answer shows which model handled it.
+- **Cost-aware model routing.** A deterministic rule engine picks a model per query from six models across OpenAI and Anthropic, so a simple lookup uses a cheap model and a complex comparison uses a premium one. Each answer shows which model handled it.
 - **Configurable MCP tools.** The three built-in tools can be enabled, disabled, redescribed, and (for the lookup tool) have their facts edited. Visitors can also build their own lookup, template, or sandboxed code tools; three examples are preloaded so there is something to run immediately. Edits apply to the live assistant.
 - **An eval workbench.** Edit the routing rules and the test cases, click Run, and watch each case route to a model and get graded (keyword or LLM-as-judge), with a per-model comparison and a persisted run history. Failed cases say why: the missed keywords, or the judge's score and rationale. The same suite runs in CI as a regression gate against a committed baseline.
 - **A model gateway.** Every model call (chat, evals, the judge) flows through one gateway that times it, counts tokens, computes USD cost from list prices, falls back across providers on error, and logs it to the `/gateway` page.
@@ -84,7 +84,7 @@ One card per page and six example questions, together covering every scenario: l
 
 ### Assistant: tools, routing, and the visible agent loop
 
-A factual question calls the `lookup_tax_info` tool and is answered by the cheapest model the rules pick (here, GPT-4o mini). Each reply carries a step trace of the tool calls and a chip with the routed model, tokens, and cost. The scenario chips stay above the composer, so every scenario can be tried in the same chat.
+A factual question calls the `lookup_tax_info` tool and is answered by the inexpensive model the rules pick for lookups (here, GPT-4o mini). Each reply carries a step trace of the tool calls and a chip with the routed model, tokens, and cost. The scenario chips stay above the composer, so every scenario can be tried in the same chat.
 
 <img src="docs/img/assistant.png" alt="Assistant answering a GST question, showing the step trace and the routed model with tokens and cost" width="100%">
 
