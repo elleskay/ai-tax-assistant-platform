@@ -53,7 +53,7 @@ requirements:
     severity: medium
     given: A visitor opens the home page
     when: The page loads
-    then: It shows the how-to-use guide and a call to action that links to the assistant
+    then: It shows the how-to-use guide with a card linking to every showcase page (Assistant, MCP tools, Evals, Gateway, Prompts, Advisor queue) and a call to action that links to the assistant
     tags: [landing, guide]
 
   - id: IRAS-CHAT-004

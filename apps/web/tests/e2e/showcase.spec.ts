@@ -9,6 +9,21 @@ specTest(
     const cta = page.getByRole("link", { name: "Start asking" }).first();
     await expect(cta).toBeVisible();
     await expect(cta).toHaveAttribute("href", "/assistant");
+
+    // One guide card per showcase page, each linking to it.
+    const guides: [string, string][] = [
+      ["Open the assistant", "/assistant"],
+      ["Open the tools", "/tools"],
+      ["Open Evals", "/evals"],
+      ["Open the gateway", "/gateway"],
+      ["Open Prompts", "/prompts"],
+      ["Open the advisor queue", "/admin"],
+    ];
+    for (const [name, href] of guides) {
+      const link = page.getByRole("link", { name });
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute("href", href);
+    }
   },
   { category: "ui" },
 );
