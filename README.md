@@ -54,19 +54,63 @@ There is no relational database. Server state is one private S3 bucket through a
 
 ### API or System Interface
 
-A set of Next.js route handlers, plus the MCP server.
+A set of Next.js route handlers, plus the MCP server. The server owns model choice, cost, and timestamps, so the client only ever sends its turns.
+
+Chat endpoint. This is the heart of the app. A POST carries the conversation so far, and the server picks a model by keyword, runs the bounded agent loop calling tools as needed, and streams the answer back token by token with the routed model, token counts, and cost attached. POST because each turn drives fresh server-side work, not a cacheable read.
 
 ```
-POST /api/chat              the agent loop, returns a streamed answer with routed-model metadata
-POST /api/eval              run one graded eval case on a chosen model
-POST /api/eval/runs         persist a completed run, GET lists run history
-GET/POST/PUT /api/prompts   list, create, and activate prompt versions
-POST /api/tools/run         run a tool server-side, including the sandbox
-GET/POST /api/hitl          list and resolve escalations
-ALL  /api/mcp               the MCP server over Streamable HTTP
+POST /api/chat -> streamed answer
+Body: {
+  messages
+}
+```
 
-MCP tools (HTTP and stdio): lookup_tax_info, calculate_tax_estimate,
-escalate_to_human (bearer-gated when MCP_API_KEY is set), run_javascript
+Eval endpoint. This scores the assistant on a single test case. A POST runs one case against a chosen model and grader, either keyword matching or an LLM judge, and returns the graded verdict. POST because a run is a fresh evaluation, not a lookup.
+
+```
+POST /api/eval -> EvalResult
+Body: {
+  question, expects, modelId?, promptVersion?, grader?, rubric?
+}
+```
+
+Eval runs endpoint. Completed runs are kept so the workbench can show a trend. A POST persists a finished run, and a GET lists the run history for the pass-rate sparkline.
+
+```
+POST /api/eval/runs -> Run
+GET  /api/eval/runs -> Run[]
+```
+
+Prompts endpoint. The system prompt is a small versioned registry, not a constant. A GET lists the versions, a POST adds a new immutable one, and a PUT moves the active pointer, so the live prompt can change without a redeploy.
+
+```
+GET  /api/prompts -> Prompt[]
+POST /api/prompts -> Prompt
+PUT  /api/prompts -> Prompt
+```
+
+Tool run endpoint. Custom tools execute server-side, never in the browser. A POST sends the tool definition and an input, and the server runs it, including user-written code inside the QuickJS sandbox, then returns the result. POST because it executes rather than reads.
+
+```
+POST /api/tools/run -> ToolResult
+Body: {
+  tool, input
+}
+```
+
+Escalation endpoint. This is the human-in-the-loop queue. A GET lists all escalations, pending and resolved, for an advisor, a POST is how the agent files one when a question needs a human, and a PATCH marks one resolved.
+
+```
+GET   /api/hitl -> Escalation[]
+POST  /api/hitl -> Escalation
+PATCH /api/hitl -> Escalation
+```
+
+MCP endpoint. The same tax tools are exposed over the Model Context Protocol so any MCP client can call them. It runs as a stateless Streamable HTTP server at this route, and over stdio for local clients like Claude Code.
+
+```
+GET POST DELETE /api/mcp
+tools: lookup_tax_info, calculate_tax_estimate, escalate_to_human (bearer-gated when MCP_API_KEY is set), run_javascript
 ```
 
 ---
@@ -79,48 +123,175 @@ We build the design one functional requirement at a time.
 
 A chat request is rate-limited and validated, then deterministic rules pick a model by keyword, the system prompt resolves from its active version, and the bounded agent loop runs through the gateway, calling tools and feeding results back until it has an answer. The reply streams with the routed model, tokens, and cost.
 
+We start with the request spine: rate-limit and validate, route to a model, run the bounded loop through the gateway, stream back.
+
 ```mermaid
-flowchart TD
-  Q[User question] --> RL{Rate limit}
-  RL -->|over| E429[429]
-  RL -->|ok| Rules[applyRoutingRules, deterministic keyword match]
-  Rules --> Pick[Pick one of six models by reason]
-  Pick --> Agent[runAgent, streamText via the gateway, bounded loop, temp 0]
-  Agent -->|tool call| Tools[lookup_tax_info, calculate_tax_estimate, escalate_to_human]
-  Tools --> Agent
-  Agent --> Stream[Stream answer plus routed model, tokens, cost]
-  Tools -->|personal question| Queue[(Advisor queue in S3)]
+flowchart LR
+  UI["Chat UI<br/>- asks a tax question"]
+  API["Chat route<br/>- rate limit<br/>- validate<br/>- pick a model by keyword"]
+  Agent["Agent loop<br/>- bounded, temp 0<br/>- calls tools, feeds results back"]
+  Tools["Tax tools<br/>- lookup_tax_info<br/>- calculate_tax_estimate"]
+  GW["Model gateway<br/>- times, tokens, USD cost<br/>- fallback provider on error"]
+  Prov{"Anthropic / OpenAI"}
+  UI -->|"POST /api/chat"| API
+  API -->|runAgent| Agent
+  Agent -->|tool calls| Tools
+  Tools -->|results| Agent
+  Agent -->|generate| GW
+  GW --> Prov
+  Agent -.stream.-> UI
 ```
 
 ### 2) A user configures and builds tools, used live
 
 The built-in tools can be enabled, disabled, redescribed, and (for lookup) have their facts edited, and visitors can build lookup, template, or sandboxed code tools. The whole tool config is sent with each chat request, so edits change the live assistant. Code tools run server-side in the sandbox, never in the browser.
 
+We add the tool config that rides with each request, and the sandbox that code tools run in.
+
+```mermaid
+flowchart LR
+  UI["Chat UI<br/>- asks a tax question"]
+  API["Chat route<br/>- rate limit<br/>- validate<br/>- pick a model by keyword"]
+  Agent["Agent loop<br/>- bounded, temp 0<br/>- calls tools, feeds results back"]
+  Tools["Built-in and custom tools<br/>- lookup_tax_info<br/>- calculate_tax_estimate<br/>- run_javascript"]
+  Cfg["Tool config<br/>- sent with each request<br/>- edits change the live assistant"]
+  Sandbox["QuickJS WASM sandbox<br/>- server-side process<br/>- runs code tools, never in browser"]
+  GW["Model gateway<br/>- times, tokens, USD cost<br/>- fallback provider on error"]
+  Prov{"Anthropic / OpenAI"}
+  UI -->|"POST /api/chat"| API
+  API -->|runAgent| Agent
+  Cfg --> Agent
+  Agent -->|tool calls| Tools
+  Tools -->|results| Agent
+  Tools -->|code tool| Sandbox
+  Agent -->|generate| GW
+  GW --> Prov
+  Agent -.stream.-> UI
+```
+
 ### 3) A user evaluates routing and answers
 
 The eval workbench routes each test case to a model and grades it, by keyword (names the missed words) or by an LLM judge (a structured verdict that fails closed). Runs persist with a pass-rate trend, and the same suite runs in CI against a committed baseline as a regression gate.
+
+The eval workbench and the CI gate hang off the same gateway, so test runs are timed and costed like any other call.
+
+```mermaid
+flowchart LR
+  UI["Chat UI<br/>- asks a tax question"]
+  API["Chat route<br/>- rate limit<br/>- validate<br/>- pick a model by keyword"]
+  Agent["Agent loop<br/>- bounded, temp 0<br/>- calls tools, feeds results back"]
+  Tools["Built-in and custom tools<br/>- lookup_tax_info<br/>- calculate_tax_estimate<br/>- run_javascript"]
+  Cfg["Tool config<br/>- sent with each request<br/>- edits change the live assistant"]
+  Sandbox["QuickJS WASM sandbox<br/>- server-side process<br/>- runs code tools, never in browser"]
+  GW["Model gateway<br/>- times, tokens, USD cost<br/>- fallback provider on error"]
+  Prov{"Anthropic / OpenAI"}
+  Eval["Eval workbench<br/>- routes each case to a model<br/>- grades by keyword or judge"]
+  Grade{"Keyword or judge"}
+  Runs[("Run history and trend<br/>- persisted pass-rate runs")]
+  CI["CI regression gate<br/>- runs the suite in CI<br/>- compares to baseline"]
+  Base[("Committed baseline<br/>- regression reference")]
+  UI -->|"POST /api/chat"| API
+  API -->|runAgent| Agent
+  Cfg --> Agent
+  Agent -->|tool calls| Tools
+  Tools -->|results| Agent
+  Tools -->|code tool| Sandbox
+  Agent -->|generate| GW
+  GW --> Prov
+  Agent -.stream.-> UI
+  Eval -->|generate| GW
+  Eval --> Grade
+  Grade --> Runs
+  CI --> Eval
+  CI --> Base
+```
 
 ### 4) A client calls the tools over MCP
 
 The tax tools are a real MCP server, stateless by design, a fresh transport per request, exposed over Streamable HTTP at /api/mcp and over stdio for local clients. The escalation tool is bearer-gated with a constant-time check when a key is configured.
 
+We expose the same tools to outside clients over MCP, without a second implementation.
+
+```mermaid
+flowchart LR
+  UI["Chat UI<br/>- asks a tax question"]
+  API["Chat route<br/>- rate limit<br/>- validate<br/>- pick a model by keyword"]
+  Agent["Agent loop<br/>- bounded, temp 0<br/>- calls tools, feeds results back"]
+  Tools["Built-in and custom tools<br/>- lookup_tax_info<br/>- calculate_tax_estimate<br/>- run_javascript"]
+  Cfg["Tool config<br/>- sent with each request<br/>- edits change the live assistant"]
+  Sandbox["QuickJS WASM sandbox<br/>- server-side process<br/>- runs code tools, never in browser"]
+  GW["Model gateway<br/>- times, tokens, USD cost<br/>- fallback provider on error"]
+  Prov{"Anthropic / OpenAI"}
+  Eval["Eval workbench<br/>- routes each case to a model<br/>- grades by keyword or judge"]
+  Grade{"Keyword or judge"}
+  Runs[("Run history and trend<br/>- persisted pass-rate runs")]
+  CI["CI regression gate<br/>- runs the suite in CI<br/>- compares to baseline"]
+  Base[("Committed baseline<br/>- regression reference")]
+  MCPc["MCP client<br/>- HTTP or stdio"]
+  MCP["MCP server<br/>- stateless, fresh transport per request<br/>- exposes the same tax tools"]
+  UI -->|"POST /api/chat"| API
+  API -->|runAgent| Agent
+  Cfg --> Agent
+  Agent -->|tool calls| Tools
+  Tools -->|results| Agent
+  Tools -->|code tool| Sandbox
+  Agent -->|generate| GW
+  GW --> Prov
+  Agent -.stream.-> UI
+  Eval -->|generate| GW
+  Eval --> Grade
+  Grade --> Runs
+  CI --> Eval
+  CI --> Base
+  MCPc -->|"/api/mcp"| MCP
+  MCP --> Tools
+```
+
 ### 5) A personal question is escalated to a human
 
 When the agent calls escalate_to_human, it writes a pending escalation to the S3 queue and tells the user. An advisor lists and resolves it from the admin page through the hitl route. The push to act is a human reading the queue, not the model deciding.
 
-### Physical deployment
-
-One CloudFront distribution fronts a streaming server Lambda built by OpenNext, with assets on S3 and a private bucket for server state. There is no database.
+The last pieces are the versioned prompt that feeds the agent and the human escalation path. That completes the logical design.
 
 ```mermaid
-flowchart TD
-  U[Browser] --> CF[CloudFront distribution]
-  CF --> SRV[Server Lambda, OpenNext, response streaming, 60s]
-  CF --> S3A[(S3 assets, public and _next static)]
-  SRV --> ANTH[Anthropic API]
-  SRV --> OAI[OpenAI API]
-  SRV --> HITL[(Private S3 bucket, escalations, gateway logs, prompts, eval runs)]
-  SRV -.optional.-> UP[(Upstash Redis, rate limit, fails open)]
+flowchart LR
+  UI["Chat UI<br/>- asks a tax question"]
+  API["Chat route<br/>- rate limit<br/>- validate<br/>- pick a model by keyword"]
+  Agent["Agent loop<br/>- bounded, temp 0<br/>- calls tools, feeds results back"]
+  Tools["Built-in and custom tools<br/>- lookup_tax_info<br/>- calculate_tax_estimate<br/>- run_javascript, escalate_to_human"]
+  Cfg["Tool config<br/>- sent with each request<br/>- edits change the live assistant"]
+  Sandbox["QuickJS WASM sandbox<br/>- server-side process<br/>- runs code tools, never in browser"]
+  GW["Model gateway<br/>- times, tokens, USD cost<br/>- fallback provider on error"]
+  Prov{"Anthropic / OpenAI"}
+  Eval["Eval workbench<br/>- routes each case to a model<br/>- grades by keyword or judge"]
+  Grade{"Keyword or judge"}
+  Runs[("Run history and trend<br/>- persisted pass-rate runs")]
+  CI["CI regression gate<br/>- runs the suite in CI<br/>- compares to baseline"]
+  Base[("Committed baseline<br/>- regression reference")]
+  MCPc["MCP client<br/>- HTTP or stdio"]
+  MCP["MCP server<br/>- stateless, fresh transport per request<br/>- exposes the same tax tools"]
+  Prompts[("Prompt versions<br/>- active pointer")]
+  Queue[("Escalation queue in S3<br/>- pending and resolved")]
+  Advisor["Advisor admin<br/>- lists and resolves escalations"]
+  UI -->|"POST /api/chat"| API
+  API -->|runAgent| Agent
+  Cfg --> Agent
+  Agent -->|tool calls| Tools
+  Tools -->|results| Agent
+  Tools -->|code tool| Sandbox
+  Agent -->|generate| GW
+  GW --> Prov
+  Agent -.stream.-> UI
+  Eval -->|generate| GW
+  Eval --> Grade
+  Grade --> Runs
+  CI --> Eval
+  CI --> Base
+  MCPc -->|"/api/mcp"| MCP
+  MCP --> Tools
+  Prompts --> Agent
+  Tools -->|escalate_to_human| Queue
+  Advisor -->|"hitl route"| Queue
 ```
 
 ---
@@ -260,6 +431,42 @@ Unit tests drive the agent with scripted mock models, and chat and eval e2e stub
 </details>
 
 ---
+
+## The complete design
+
+Pulling the high-level design and the deep dives together, here is the whole system in one view. It deploys as one CloudFront distribution over an OpenNext streaming server Lambda (60s), with assets on S3, server state in a private S3 bucket, and optional Upstash for rate limiting. There is no database.
+
+```mermaid
+flowchart LR
+  UI["Chat UI<br/>- asks a tax question"]
+  MCP["MCP client<br/>- HTTP or stdio"]
+  Advisor["Advisor admin<br/>- lists and resolves escalations"]
+  API["Chat route<br/>- rate limit<br/>- validate<br/>- keyword routing"]
+  Agent["Bounded agent loop<br/>- temp 0<br/>- calls tools, feeds results back"]
+  Tools["Built-in and custom tools<br/>- lookup_tax_info, calculate_tax_estimate<br/>- run_javascript, escalate_to_human"]
+  Sandbox["QuickJS sandbox<br/>- server-side process<br/>- runs code tools"]
+  GW["Model gateway<br/>- times, tokens, USD cost<br/>- fallback provider on error"]
+  Eval["Eval workbench and CI gate<br/>- routes and grades cases<br/>- regression gate in CI"]
+  MCPS["MCP server, stateless<br/>- fresh transport per request<br/>- exposes the same tax tools"]
+  Prompts[("Prompt versions<br/>- active pointer")]
+  Queue[("Escalation queue<br/>- pending and resolved")]
+  Runs[("Eval runs and baseline<br/>- run history and committed baseline")]
+  Prov{"Anthropic / OpenAI"}
+  UI -->|"POST /api/chat"| API
+  API --> Agent
+  Agent <-->|tool calls| Tools
+  Tools -->|code tool| Sandbox
+  Agent -->|generate| GW
+  GW --> Prov
+  Agent -.stream.-> UI
+  Eval -->|generate| GW
+  Prompts --> Agent
+  Tools -->|escalate_to_human| Queue
+  Advisor --> Queue
+  Eval --> Runs
+  MCP -->|"/api/mcp"| MCPS
+  MCPS --> Tools
+```
 
 ## Tech stack
 
