@@ -2,8 +2,6 @@
 
 > A system design breakdown of the AI Tax Assistant Platform, a multi-tenant tool for tax officers. Each department gets its own workspace and a document-grounded assistant: officers ask questions, draft replies for review, and triage cases, grounded in the workspace's own documents (RAG) and cited. Every query is routed cost-aware across six models through one observed gateway, custom tools run in a secure sandbox, and the whole platform runs under one governance standard expressed as code: PII handling, grounding, an eval gate, a cost ceiling, a full audit trail.
 >
-> **Live demo** at https://ai-tax.soonkeong.dev
->
 > General information for demonstration, not personalised tax advice, and the figures are illustrative.
 
 ---
