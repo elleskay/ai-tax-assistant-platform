@@ -75,12 +75,13 @@ DELETE /api/knowledge -> removes a document
 GET    /api/knowledge/download -> the original file
 ```
 
-Workspaces endpoint. A GET lists the platform's workspaces (the seeds plus any created), a POST creates one, and a PATCH updates its settings.
+Workspaces endpoint. A GET lists the platform's workspaces (the seeds plus any created), a POST creates one, a PATCH updates its settings, and a DELETE removes a custom workspace (the seeded ones are protected).
 
 ```
-GET   /api/workspaces -> Workspace[]
-POST  /api/workspaces -> Workspace
-PATCH /api/workspaces -> Workspace
+GET    /api/workspaces -> Workspace[]
+POST   /api/workspaces -> Workspace
+PATCH  /api/workspaces -> Workspace
+DELETE /api/workspaces -> removes a custom workspace
 ```
 
 Prompts endpoint. The instructions are a small versioned registry per workspace, not a constant. A GET lists versions, a POST adds a new immutable one, and a PUT moves the active pointer, so the live prompt changes without a redeploy.

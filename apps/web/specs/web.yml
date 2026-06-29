@@ -19,15 +19,6 @@ requirements:
     then: It returns the matching fact for known topics and a guidance fallback listing available topics for unknown ones
     tags: [tax, lookup]
 
-  - id: TAX-HITL-001
-    title: Escalation store supports create, list, and resolve
-    category: data
-    severity: high
-    given: An empty escalation queue
-    when: addEscalation is called, then listEscalations, then resolveEscalation on the new id
-    then: The entry is created as pending, listed, and then marked resolved
-    tags: [hitl, store]
-
   - id: TAX-CHAT-001
     title: Home page renders the chat interface
     category: ui
@@ -85,25 +76,6 @@ requirements:
     then: A disclaimer states this is general information, not personalised tax advice
     tags: [chat, compliance]
 
-  - id: TAX-HITL-002
-    title: Admin page lists pending escalations from the queue
-    category: functional
-    severity: high
-    given: At least one pending escalation exists in the queue
-    when: An advisor opens the admin page
-    then: The pending escalation is listed with its reason and original query
-    tags: [hitl, admin]
-
-  - id: TAX-HITL-003
-    title: Resolving an escalation marks it resolved end to end
-    category: functional
-    severity: high
-    given: A pending escalation has been created via the escalation API
-    when: The advisor opens the admin page and clicks Resolve on that escalation
-    then: The escalation is shown as resolved after the action
-    tags: [hitl, admin, journey]
-    depends_on: [TAX-HITL-002]
-
   - id: TAX-A11Y-001
     title: Page exposes a skip-to-content link and a single h1
     category: a11y
@@ -137,7 +109,7 @@ requirements:
     severity: high
     given: A visitor is anywhere on the site
     when: They look at the primary navigation
-    then: There are links to Assistant, MCP tools, Evals, Gateway, Prompts, and the Advisor queue
+    then: There are links to the Assistant, Documents, AI Tools, AI Instructions, Usage analytics, AI Gateway, AI Dashboard, AI Policy, AI Audit Trail, and AI Evaluation
     tags: [nav, showcase]
 
   - id: TAX-TOOLS-002
@@ -427,16 +399,6 @@ requirements:
     then: The tool result text includes the sandbox-computed value
     tags: [mcp, journey]
     notes: Full over-the-wire journey against the real endpoint and the QuickJS sandbox; no LLM involved.
-
-  - id: TAX-MCP-004
-    title: Escalation over MCP requires the API key when one is configured
-    category: security
-    severity: high
-    given: MCP_API_KEY is set in the environment
-    when: tools/call escalate_to_human arrives without (or with a wrong) bearer token
-    then: The request is rejected with 401 before reaching the tool, using a constant-time comparison; with no MCP_API_KEY configured the tool stays open
-    tags: [mcp, security]
-    notes: Vitest with stubbed env against the route handler and the pure guard, no live server needed.
 
   - id: TAX-TOOLS-007
     title: Example tools are preloaded and runnable on first visit
