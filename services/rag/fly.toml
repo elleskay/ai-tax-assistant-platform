@@ -22,10 +22,10 @@ primary_region = "sin"   # Singapore — closest to our users
 [http_service]
   internal_port = 8080
   force_https = true
-  # Always-on warm instance: never scale to zero, keep exactly one machine.
-  auto_stop_machines = false
-  auto_start_machines = false
-  min_machines_running = 1
+  # Scale to zero when idle, auto-wake on the next request (self-healing demo).
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
 
   [[http_service.checks]]
     interval = "15s"
