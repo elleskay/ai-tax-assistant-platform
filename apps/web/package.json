@@ -2,7 +2,7 @@
   "name": "web",
   "version": "0.1.0",
   "private": true,
-  "description": "IRAS Singapore tax assistant: conversational agent with tax lookup, estimates, and human-in-the-loop escalation.",
+  "description": "Singapore tax assistant: conversational agent with tax lookup, estimates, and human-in-the-loop escalation.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

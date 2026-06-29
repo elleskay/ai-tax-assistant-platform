@@ -1,4 +1,4 @@
-# IRAS Tax Assistant
+# AI Tax Assistant
 
 Conversational assistant for Singapore tax questions (GST, income tax, corporate
 tax, SRS), with rough tax estimates and human-in-the-loop (HITL) escalation.
@@ -6,7 +6,7 @@ Built on the platform template: Next.js (App Router) + AI SDK + AWS serverless.
 
 ## What it does
 
-- **Chat agent** (`/`): answers general, factual IRAS tax questions using a
+- **Chat agent** (`/`): answers general, factual tax questions using a
   `lookup_tax_info` tool, and can produce a rough chargeable-income estimate.
 - **Auto escalation**: personalised queries ("how much will I owe...") are
   escalated to a human advisor instead of being answered, via the
@@ -14,7 +14,7 @@ Built on the platform template: Next.js (App Router) + AI SDK + AWS serverless.
 - **Advisor queue** (`/admin`): lists pending escalations and lets an advisor
   resolve them.
 
-The tool logic is ported from the original `iras-mcp-server` MCP tools.
+The tool logic is ported from the original MCP tools.
 
 ## Design system
 

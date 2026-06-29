@@ -9,7 +9,7 @@
 # is NOT durable on Fly (the filesystem is ephemeral) — set it for any real use.
 
 app = "iras-rag"
-primary_region = "sin"   # Singapore — closest to IRAS users
+primary_region = "sin"   # Singapore — closest to our users
 
 [build]
   dockerfile = "Dockerfile"

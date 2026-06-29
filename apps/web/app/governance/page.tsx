@@ -245,10 +245,6 @@ export default async function DashboardPage() {
           </a>
         </div>
       </main>
-
-      <p className="mt-8 text-xs text-muted-foreground">
-        Unofficial demo, not affiliated with IRAS.
-      </p>
     </div>
   );
 }

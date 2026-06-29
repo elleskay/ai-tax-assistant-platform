@@ -54,7 +54,7 @@ export class WebStack extends cdk.Stack {
       customDomain: {
         domainName: "ai-tax.soonkeong.dev",
         certificateArn:
-          "arn:aws:acm:us-east-1:281639842383:certificate/6b80f74c-e6b2-4ade-b57f-7db2b2d30771",
+          "arn:aws:acm:us-east-1:281639842383:certificate/45a2e0d5-b434-4f9c-a978-60ff3d4d3ac6",
       },
     });
 
