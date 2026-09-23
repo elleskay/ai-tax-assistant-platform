@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { JsonCode, KIND_TONE, Tag } from "@/components/tone";
 import { EmptyState, PAGE_CLASS, PageHeader } from "@/components/page-header";
 import {
   Dialog,
@@ -158,9 +159,18 @@ export default function ToolsPage() {
 
 function Result({ value, testid }: { value: string | null; testid: string }) {
   if (value === null) return null;
+  // JSON results get syntax colors (text kept exactly as returned); plain
+  // text reads as a string.
+  let isJson = false;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    isJson = parsed !== null && typeof parsed === "object";
+  } catch {
+    // not JSON
+  }
   return (
-    <pre data-testid={testid} className="whitespace-pre-wrap rounded-md bg-muted px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground">
-      {value}
+    <pre data-testid={testid} className="whitespace-pre-wrap break-all rounded-md bg-muted px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground">
+      {isJson ? <JsonCode value={value} /> : <span className="text-[var(--syn-str)]">{value}</span>}
     </pre>
   );
 }
@@ -222,22 +232,30 @@ function CustomToolCard({ tool, onEdit, onDelete }: { tool: CustomTool; onEdit: 
       setRunning(false);
     }
   }
-  const sig = `(${params.map((p) => `${p.name}: ${p.type}`).join(", ")})`;
 
   return (
     <article className="overflow-hidden rounded-lg bg-card" data-testid="custom-tool" data-name={tool.name}>
       <header className="flex items-start justify-between gap-3 border-b px-5 py-4">
         <div className="min-w-0">
           <p className="break-all font-mono text-sm">
-            <span className="font-medium text-heading">{tool.name}</span>
-            <span className="text-muted-foreground">{sig}</span>
+            <span className="font-medium text-[var(--syn-fn)]">{tool.name}</span>
+            <span className="text-muted-foreground">(</span>
+            {params.map((p, i) => (
+              <span key={p.name}>
+                {i > 0 ? <span className="text-muted-foreground">, </span> : null}
+                <span className="text-[var(--syn-key)]">{p.name}</span>
+                <span className="text-muted-foreground">: </span>
+                <span className="text-[var(--syn-num)]">{p.type}</span>
+              </span>
+            ))}
+            <span className="text-muted-foreground">)</span>
           </p>
           <p className="mt-0.5 text-sm text-muted-foreground">{tool.description}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <span className="mr-1 hidden rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground sm:inline">
+          <Tag tone={KIND_TONE[tool.kind]} className="mr-1 hidden sm:inline-flex">
             {KIND_LABEL[tool.kind]}
-          </span>
+          </Tag>
           <button type="button" onClick={onEdit} className="rounded-full px-3 py-1 text-[13px] font-medium text-foreground transition-colors hover:bg-accent">Edit</button>
           <button type="button" aria-label={`Delete ${tool.name}`} onClick={onDelete} className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive">
             <Trash2 className="h-4 w-4" strokeWidth={1.75} />

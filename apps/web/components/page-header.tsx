@@ -32,11 +32,24 @@ export function PageHeader({
     >
       <div className="min-w-0">
         {eyebrow ? (
-          <p className="mb-3 text-sm font-medium text-muted-foreground">{eyebrow}</p>
+          <p className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            {/* Scope color: the workspace is indigo, the platform orange. */}
+            {typeof eyebrow === "string" ? (
+              <span
+                aria-hidden
+                className={cn(
+                  "size-1.5 rounded-full",
+                  eyebrow.startsWith("Platform") ? "bg-sunset" : "bg-cat-indigo",
+                )}
+              />
+            ) : null}
+            {eyebrow}
+          </p>
         ) : null}
         <h1 className="text-4xl leading-[1.05] tracking-tight sm:text-[44px]">
           {title}
         </h1>
+        <span aria-hidden className="spectrum-bar mt-4 block h-[3px] w-14 rounded-full" />
         {description ? (
           <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
             {description}

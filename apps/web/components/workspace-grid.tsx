@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { ArrowRight, Trash2 } from "lucide-react";
+import { SERIES, Tag, fillClass } from "@/components/tone";
+
+/** First and last initials: "Individual Income Tax" -> "IT". */
+const monogram = (name: string) => {
+  const words = name.trim().split(/\s+/);
+  return ((words[0]?.[0] ?? "") + (words.length > 1 ? words[words.length - 1][0] : "")).toUpperCase();
+};
 import {
   readWorkspaceCookie,
   setWorkspaceCookie,
@@ -67,20 +74,23 @@ export function WorkspaceGrid() {
 
   return (
     <ul className="grid gap-3 sm:grid-cols-2">
-      {list.map((w) => (
+      {list.map((w, i) => (
         <li key={w.id} className="relative flex items-center overflow-hidden rounded-lg bg-card">
           <button
             onClick={() => open(w.id)}
             className="group flex min-h-36 min-w-0 flex-1 flex-col justify-between gap-6 p-6 text-left transition-colors hover:bg-card/70"
           >
             <span className="min-w-0">
+              {/* Monogram in the workspace's series color. */}
+              <span
+                aria-hidden
+                className={`mb-4 flex size-9 items-center justify-center rounded-full text-sm font-semibold text-background ${fillClass(SERIES[i % SERIES.length])}`}
+              >
+                {monogram(w.name)}
+              </span>
               <span className="flex flex-wrap items-center gap-2">
                 <span className="text-xl tracking-tight">{w.name}</span>
-                {w.id === activeId ? (
-                  <span className="rounded-full bg-sunset/10 px-2 py-0.5 text-[11px] font-medium text-sunset">
-                    Current
-                  </span>
-                ) : null}
+                {w.id === activeId ? <Tag tone="sunset">Current</Tag> : null}
               </span>
               <span className="mt-1 block font-mono text-xs text-muted-foreground">
                 {w.id}

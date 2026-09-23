@@ -5,11 +5,13 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system: dark-first and near-monochrome. A #0a0a0a canvas, #1a1a1a
- * cards with no borders, white pill buttons for the one primary action, and
- * translucent white for everything secondary. Large, light, tightly tracked
- * headlines; short copy. One warm accent (--sunset) for "new" markers only.
- * Type: Geist and Geist Mono. Light mode is the same system inverted.
+ * Design system: dark-first. A #0a0a0a canvas, #1a1a1a cards with no borders,
+ * white pill buttons for the one primary action, and translucent white for
+ * everything secondary. Large, light, tightly tracked headlines; short copy.
+ * Color carries meaning (see components/tone.tsx): scope (workspace indigo,
+ * platform orange), vendor, status, and one hue per category, plus the brand
+ * spectrum as an accent. Type: Geist and Geist Mono. Light mode is the same
+ * system inverted.
  *
  * Legacy token names (navy, gold, brand-from/to, shadow-soft/card/pop) are
  * kept so older class names still resolve; their values follow this system.
@@ -41,6 +43,15 @@
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-sunset: var(--sunset);
+  --color-cat-indigo: var(--cat-indigo);
+  --color-cat-purple: var(--cat-purple);
+  --color-cat-pink: var(--cat-pink);
+  --color-cat-orange: var(--cat-orange);
+  --color-cat-yellow: var(--cat-yellow);
+  --color-cat-cyan: var(--cat-cyan);
+  --color-cat-emerald: var(--cat-emerald);
+  --color-vendor-anthropic: var(--vendor-anthropic);
+  --color-vendor-openai: var(--vendor-openai);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -108,6 +119,18 @@
   --brand-from: #0a0a0a;
   --brand-to: #0a0a0a;
 
+  /* Categorical colors: one per category (rule reason, tool kind, event
+     type, cluster). Tailwind 600-700 steps, so text passes 4.5:1 on white. */
+  --cat-indigo: #4f46e5;
+  --cat-purple: #9333ea;
+  --cat-pink: #db2777;
+  --cat-orange: #c2410c;
+  --cat-yellow: #a16207;
+  --cat-cyan: #0e7490;
+  --cat-emerald: #047857;
+  --vendor-anthropic: #c2410c;
+  --vendor-openai: #047857;
+
   /* Syntax and data colors (GitHub light), used in previews and code. */
   --syn-fn: #8250df;
   --syn-str: #0a3069;
@@ -159,6 +182,17 @@
 
   --brand-from: #ffffff;
   --brand-to: #ffffff;
+
+  /* Categorical colors (Tailwind 400 steps on dark). */
+  --cat-indigo: #818cf8;
+  --cat-purple: #c084fc;
+  --cat-pink: #f472b6;
+  --cat-orange: #fb923c;
+  --cat-yellow: #facc15;
+  --cat-cyan: #22d3ee;
+  --cat-emerald: #34d399;
+  --vendor-anthropic: #ff7a33;
+  --vendor-openai: #34d399;
 
   /* Syntax and data colors (GitHub dark). */
   --syn-fn: #d2a8ff;
@@ -321,6 +355,11 @@
   animation: hero-shimmer 3s linear 0.35s both;
 }
 
+/* The brand spectrum as a static accent (page headers, score bars). */
+.spectrum-bar {
+  background-image: linear-gradient(90deg, #6366f1, #a855f7, #ec4899, #f97316, #eab308);
+}
+
 /* Indeterminate "searching" line. */
 @keyframes scan {
   from {
@@ -395,7 +434,7 @@
   font-family: var(--font-mono);
   font-size: 0.75em;
   font-weight: 500;
-  color: var(--muted-foreground);
+  color: var(--sunset);
   text-decoration: none;
   white-space: nowrap;
   vertical-align: 0.15em;

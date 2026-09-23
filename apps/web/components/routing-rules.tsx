@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Trash2, RotateCcw } from "lucide-react";
 import { SectionHeading } from "@/components/page-header";
 import { Select } from "@/components/ui/select";
+import { Dot, ModelName, Tag, reasonTone } from "@/components/tone";
 import { MODELS, modelOptionLabel } from "@/lib/model-registry";
 import {
   type RoutingConfig,
@@ -20,7 +21,11 @@ import {
  */
 
 const modelLabel = (id: string) => MODELS.find((m) => m.id === id)?.label ?? id;
-const MODEL_OPTIONS = MODELS.map((m) => ({ value: m.id, label: modelOptionLabel(m) }));
+// Each option leads with its vendor dot, in the list and in the trigger.
+const MODEL_OPTIONS = MODELS.map((m) => ({
+  value: m.id,
+  label: <ModelName label={modelOptionLabel(m)} />,
+}));
 
 function genId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e5).toString(36)}`;
@@ -59,14 +64,17 @@ export function RoutingRules() {
         }
       />
       <div className="flex flex-col gap-3 rounded-lg bg-card p-6">
-          <div className="hidden grid-cols-[minmax(0,1fr)_14rem_8rem_2rem] gap-2 px-0.5 text-xs text-muted-foreground sm:grid">
+          <div className="hidden grid-cols-[0.5rem_minmax(0,1fr)_14rem_8rem_2rem] gap-2 px-0.5 text-xs text-muted-foreground sm:grid">
+            <span />
             <span>Keywords</span>
             <span>Model</span>
             <span>Reason</span>
             <span />
           </div>
           {config.rules.map((rule, i) => (
-            <div key={rule.id} className="flex flex-col gap-2 sm:grid sm:grid-cols-[minmax(0,1fr)_14rem_8rem_2rem] sm:items-center">
+            <div key={rule.id} className="flex flex-col gap-2 sm:grid sm:grid-cols-[0.5rem_minmax(0,1fr)_14rem_8rem_2rem] sm:items-center">
+              {/* The rule's category color, shared with its reason tag. */}
+              <Dot tone={reasonTone(rule.reason)} className="hidden size-2 sm:block" />
               <input
                 aria-label={`Rule ${i + 1} keywords`}
                 value={rule.keywords.join(", ")}
@@ -154,10 +162,13 @@ export function RoutingRules() {
           />
         </label>
         <span data-testid="route-preview" className="text-sm sm:pt-5">
-          routes to <b className="font-medium text-foreground">{modelLabel(preview.modelId)}</b>{" "}
-          <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 font-mono text-xs text-muted-foreground">
+          routes to{" "}
+          <b className="font-medium text-foreground">
+            <ModelName label={modelLabel(preview.modelId)} />
+          </b>{" "}
+          <Tag tone={reasonTone(preview.reason)} mono className="ml-1">
             {preview.reason}
-          </span>
+          </Tag>
         </span>
       </div>
     </section>

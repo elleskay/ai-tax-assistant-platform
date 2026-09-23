@@ -29,11 +29,20 @@ import { ThemeToggle } from "./theme-toggle";
 type NavLink = { href: string; label: string; icon: typeof Home };
 
 // Two scopes: the selected department's workspace, then the platform-wide
-// governance layer over every workspace.
-const GROUPS: { label: string; workspace?: boolean; links: NavLink[] }[] = [
+// governance layer over every workspace. Each has a color (workspace indigo,
+// platform orange) that marks its caption and the active page's icon.
+const GROUPS: {
+  label: string;
+  workspace?: boolean;
+  accent: string;
+  dot: string;
+  links: NavLink[];
+}[] = [
   {
     label: "Workspace",
     workspace: true,
+    accent: "text-cat-indigo",
+    dot: "bg-cat-indigo",
     links: [
       { href: "/assistant", label: "Assistant", icon: MessageSquare },
       { href: "/documents", label: "Documents", icon: Files },
@@ -45,6 +54,8 @@ const GROUPS: { label: string; workspace?: boolean; links: NavLink[] }[] = [
   },
   {
     label: "Platform",
+    accent: "text-sunset",
+    dot: "bg-sunset",
     links: [
       { href: "/governance", label: "AI Dashboard", icon: LayoutDashboard },
       { href: "/governance/policy", label: "AI Policy", icon: Scale },
@@ -125,7 +136,7 @@ function NavLinks({
     collapsed ? "w-0 opacity-0" : "opacity-100",
   );
 
-  const renderLink = ({ href, label, icon: Icon }: NavLink) => {
+  const renderLink = ({ href, label, icon: Icon }: NavLink, accent = "") => {
     const active = isActive(href);
     return (
       <Link
@@ -152,7 +163,7 @@ function NavLinks({
         aria-current={active ? "page" : undefined}
         className={itemClass(active)}
       >
-        <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+        <Icon className={cn("h-4 w-4 shrink-0", active && accent)} strokeWidth={1.75} />
         <span className={labelClass}>{label}</span>
       </Link>
     );
@@ -171,10 +182,11 @@ function NavLinks({
           <p className="flex h-6 items-center overflow-hidden whitespace-nowrap px-2.5">
             <span
               className={cn(
-                "min-w-0 truncate text-xs font-medium text-muted-foreground transition-[opacity,width] duration-200 ease-out",
+                "flex min-w-0 items-center gap-2 truncate text-xs font-medium text-muted-foreground transition-[opacity,width] duration-200 ease-out",
                 collapsed ? "w-0 opacity-0" : "opacity-100",
               )}
             >
+              <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", group.dot)} />
               {group.label}
             </span>
             <span
@@ -202,7 +214,7 @@ function NavLinks({
               </div>
             )
           ) : null}
-          {group.links.map(renderLink)}
+          {group.links.map((link) => renderLink(link, group.accent))}
         </nav>
       ))}
     </div>

@@ -18,6 +18,7 @@ import {
   PageHeader,
   SectionHeading,
 } from "@/components/page-header";
+import { Tag } from "@/components/tone";
 
 interface Doc {
   doc_id: string;
@@ -185,14 +186,16 @@ export default function DocumentsPage() {
                       <span className="flex items-center gap-2.5 text-foreground">
                         <FileText
                           aria-hidden
-                          className="h-4 w-4 shrink-0 text-muted-foreground"
+                          className="h-4 w-4 shrink-0 text-cat-purple"
                           strokeWidth={1.75}
                         />
                         <span className="truncate">{d.filename}</span>
                       </span>
                     </td>
-                    <td className="px-5 py-2.5 text-right font-mono text-[13px] tabular-nums text-muted-foreground">
-                      {d.chunk_count}
+                    <td className="px-5 py-2.5 text-right">
+                      <Tag tone="purple" mono>
+                        {d.chunk_count}
+                      </Tag>
                     </td>
                     <td className="px-3 py-1.5">
                       <div className="flex items-center justify-end gap-0.5">
@@ -257,7 +260,17 @@ export default function DocumentsPage() {
                       <span className="text-foreground">{c.source.filename}</span> &middot;{" "}
                       {c.source.location}
                     </span>
-                    <span className="font-mono tabular-nums">{c.score.toFixed(3)}</span>
+                    <span className="flex items-center gap-2">
+                      {i === 0 ? <Tag tone="sunset">top match</Tag> : null}
+                      <span className="font-mono tabular-nums">{c.score.toFixed(3)}</span>
+                    </span>
+                  </div>
+                  {/* Similarity as a bar in the brand spectrum. */}
+                  <div aria-hidden className="mb-2.5 h-[3px] overflow-hidden rounded-full bg-foreground/[0.06]">
+                    <div
+                      className="spectrum-bar h-full rounded-full"
+                      style={{ width: `${Math.max(4, Math.min(100, c.score * 100))}%` }}
+                    />
                   </div>
                   <p className="max-w-3xl text-sm leading-relaxed text-foreground/85">{c.text}</p>
                 </li>

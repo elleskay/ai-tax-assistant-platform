@@ -54,6 +54,10 @@ export function PolicyEditor({ policy }: { policy: GovernancePolicy }) {
   }
 
   const labelCls = "flex flex-col gap-1.5 text-sm font-medium text-foreground";
+  // A colored dot per guardrail, matching its category across the app.
+  const mark = (className: string) => (
+    <span aria-hidden className={`mr-2 inline-block size-1.5 -translate-y-px rounded-full ${className}`} />
+  );
 
   return (
     <section>
@@ -64,7 +68,7 @@ export function PolicyEditor({ policy }: { policy: GovernancePolicy }) {
       <div className="flex flex-col gap-5 rounded-lg bg-card p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={labelCls}>
-            Cost ceiling (USD per call)
+            <span>{mark("bg-cat-orange")}Cost ceiling (USD per call)</span>
             <Input
               type="number"
               step="0.01"
@@ -74,7 +78,7 @@ export function PolicyEditor({ policy }: { policy: GovernancePolicy }) {
             />
           </label>
           <label className={labelCls}>
-            Eval gate (% pass rate)
+            <span>{mark("bg-cat-emerald")}Eval gate (% pass rate)</span>
             <Input
               type="number"
               min="0"
@@ -85,14 +89,14 @@ export function PolicyEditor({ policy }: { policy: GovernancePolicy }) {
           </label>
         </div>
         <label className={labelCls}>
-          PII triggers
+          <span>{mark("bg-cat-pink")}PII triggers</span>
           <Input
             value={triggers}
             onChange={(e) => setTriggers(e.target.value)}
           />
         </label>
         <label className={labelCls}>
-          PII handling rule
+          <span>{mark("bg-cat-pink")}PII handling rule</span>
           <Textarea
             rows={3}
             value={piiAction}
@@ -100,7 +104,7 @@ export function PolicyEditor({ policy }: { policy: GovernancePolicy }) {
           />
         </label>
         <label className={labelCls}>
-          Grounding rule
+          <span>{mark("bg-cat-yellow")}Grounding rule</span>
           <Textarea
             rows={3}
             value={grounding}

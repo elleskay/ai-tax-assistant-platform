@@ -77,7 +77,7 @@ export function StepList({
           </span>
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             <span className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-[13px] font-medium text-heading">
+              <span className="font-mono text-[13px] font-medium text-[var(--syn-fn)]">
                 {toolName(part)}
               </span>
               {getStatusBadge(part.state)}

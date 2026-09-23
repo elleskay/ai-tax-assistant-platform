@@ -5,6 +5,11 @@ import { Play, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { ModelName, Tag, textClass, type Tone } from "@/components/tone";
+
+// Pass-rate bands (80% is the default policy gate).
+const rateTone = (rate: number): Tone =>
+  rate >= 80 ? "success" : rate >= 50 ? "warning" : "danger";
 import { EmptyState, SectionHeading } from "@/components/page-header";
 import { MODELS } from "@/lib/model-registry";
 import {
@@ -309,7 +314,7 @@ export function EvalsWorkbench() {
         ) : (
           <div className="flex flex-col gap-6" data-testid="eval-stats">
             <div className="grid grid-cols-3 gap-3">
-              <Stat label="Pass rate" value={`${rate}%`} accent />
+              <Stat label="Pass rate" value={`${rate}%`} tone={rateTone(rate)} />
               <Stat label="Passed" value={`${passed}/${total}`} />
               <Stat label="Models used" value={String(perModel.size)} />
             </div>
@@ -320,8 +325,10 @@ export function EvalsWorkbench() {
                 <ul className="flex flex-col overflow-hidden rounded-lg bg-card">
                   {[...perModel.entries()].map(([label, s]) => (
                     <li key={label} className="flex items-center justify-between border-b px-5 py-3 text-sm last:border-0">
-                      <span className="text-foreground">{label}</span>
-                      <span className="font-mono text-xs tabular-nums text-muted-foreground">{s.pass}/{s.total} passed</span>
+                      <ModelName label={label} />
+                      <span className={`font-mono text-xs tabular-nums ${textClass(rateTone((s.pass / s.total) * 100))}`}>
+                        {s.pass}/{s.total} passed
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -343,7 +350,7 @@ export function EvalsWorkbench() {
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                       <span className="text-sm font-medium text-foreground">{r.query}</span>
-                      <span className="font-mono text-xs text-muted-foreground">{r.modelLabel}</span>
+                      <ModelName label={r.modelLabel} className="font-mono text-xs text-muted-foreground" />
                     </div>
                     {r.error ? (
                       <p className="text-xs text-destructive">{r.error}</p>
@@ -395,7 +402,7 @@ export function EvalsWorkbench() {
                   data-testid="run-bar"
                   title={`${r.passRate}%`}
                   style={{ height: `${Math.max(8, r.passRate)}%` }}
-                  className="w-3 rounded-t-[3px] bg-foreground/80"
+                  className={`w-3 rounded-t-[3px] ${r.passRate >= 80 ? "bg-success/80" : "bg-destructive/70"}`}
                 />
               ))}
             </div>
@@ -414,18 +421,18 @@ export function EvalsWorkbench() {
                         timeZone: "Asia/Singapore",
                       })}
                     </span>
-                    <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+                    <Tag tone={r.grader === "judge" ? "purple" : "cyan"} mono>
                       {r.grader}
-                    </span>
+                    </Tag>
                     {r.promptVersion !== undefined ? (
-                      <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+                      <Tag tone="pink" mono>
                         Prompt v{r.promptVersion}
-                      </span>
+                      </Tag>
                     ) : null}
                   </span>
                   <span className="font-mono text-xs tabular-nums text-muted-foreground">
                     {r.passed}/{r.total}{" "}
-                    <b className="ml-1 text-sm font-medium text-foreground">{r.passRate}%</b>
+                    <b className={`ml-1 text-sm font-medium ${textClass(rateTone(r.passRate))}`}>{r.passRate}%</b>
                   </span>
                 </li>
               ))}
@@ -437,12 +444,12 @@ export function EvalsWorkbench() {
   );
 }
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Stat({ label, value, tone }: { label: string; value: string; tone?: Tone }) {
   return (
     <div className="rounded-lg bg-card p-5">
       <p className="text-sm text-muted-foreground">{label}</p>
       <p
-        className={`mt-3 text-4xl font-medium leading-none tracking-tight tabular-nums ${accent ? "text-foreground" : "text-foreground/85"}`}
+        className={`mt-3 text-4xl font-medium leading-none tracking-tight tabular-nums ${tone ? textClass(tone) : "text-foreground"}`}
       >
         {value}
       </p>

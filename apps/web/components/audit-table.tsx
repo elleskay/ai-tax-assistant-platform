@@ -4,6 +4,13 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/page-header";
+import { EVENT_TONE, Tag } from "@/components/tone";
+
+const EVENT_LABEL: Record<AuditEntry["kind"], string> = {
+  "model-call": "call",
+  "eval-run": "eval",
+  "prompt-version": "prompt",
+};
 import type { AuditEntry } from "@/lib/governance";
 
 /*
@@ -67,13 +74,18 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
                 <td className="whitespace-nowrap px-5 py-3 font-mono text-xs text-muted-foreground">
                   {a.workspace ?? "n/a"}
                 </td>
-                <td className="px-5 py-3 text-foreground">{a.summary}</td>
+                <td className="px-5 py-3 text-foreground">
+                  <span className="flex items-center gap-2.5">
+                    <Tag tone={EVENT_TONE[a.kind] ?? "neutral"} mono className="w-14 justify-center">
+                      {EVENT_LABEL[a.kind] ?? a.kind}
+                    </Tag>
+                    {a.summary}
+                  </span>
+                </td>
                 <td className="px-5 py-3 text-muted-foreground">{a.detail}</td>
                 <td className="px-5 py-3">
                   {a.flag ? (
-                    <span className="whitespace-nowrap rounded-full bg-warning px-2 py-0.5 text-[11px] font-medium text-warning-foreground">
-                      {a.flag}
-                    </span>
+                    <Tag tone={a.flag === "fallback" ? "sunset" : "warning"}>{a.flag}</Tag>
                   ) : (
                     <span className="text-muted-foreground/60">none</span>
                   )}

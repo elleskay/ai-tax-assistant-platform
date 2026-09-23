@@ -148,7 +148,7 @@ function SourceItem({ source, id }: { source: Source; id: string }) {
         aria-expanded={open}
         className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs leading-relaxed transition-colors hover:bg-accent"
       >
-        <span className="font-mono font-medium text-muted-foreground">[{source.n}]</span>
+        <span className="font-mono font-medium text-sunset">[{source.n}]</span>
         <span className="min-w-0 flex-1">
           <span className="font-medium text-foreground">{source.filename}</span>
           <span className="text-muted-foreground"> · {source.location}</span>

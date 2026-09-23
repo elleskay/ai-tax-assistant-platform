@@ -1,6 +1,12 @@
 import { EmptyState, PAGE_CLASS, PageHeader } from "@/components/page-header";
+import { ModelName, Tag } from "@/components/tone";
+import { cn } from "@/lib/utils";
 import { listGatewayCalls } from "@/lib/gateway-store";
 import { activeWorkspace } from "@/lib/tenant";
+
+// Latency bands: fast green, slow amber, very slow red.
+const latencyClass = (ms: number) =>
+  ms < 1000 ? "text-success" : ms < 2000 ? "text-warning-foreground" : "text-destructive";
 
 // Reads the request log at request time, never at build time.
 export const dynamic = "force-dynamic";
@@ -68,21 +74,28 @@ export default async function GatewayPage() {
                       {formatTime(c.timestamp)}
                     </td>
                     <td className="whitespace-nowrap px-5 py-3">
-                      {c.modelLabel}
-                      {c.fallbackUsed ? (
-                        <span className="ml-2 rounded-full bg-warning px-2 py-0.5 text-[11px] font-medium text-warning-foreground">
-                          fallback
-                        </span>
-                      ) : null}
+                      <span className="inline-flex items-center gap-2">
+                        <ModelName label={c.modelLabel} />
+                        {c.fallbackUsed ? <Tag tone="sunset">fallback</Tag> : null}
+                      </span>
                     </td>
-                    <td className="px-5 py-3 text-muted-foreground">{c.kind}</td>
+                    <td className="px-5 py-3">
+                      <Tag tone={c.kind === "stream" ? "cyan" : "purple"} mono>
+                        {c.kind}
+                      </Tag>
+                    </td>
                     <td className="max-w-48 truncate px-5 py-3 font-mono text-xs text-muted-foreground">
                       {c.route ?? ""}
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 text-right font-mono text-[13px] tabular-nums">
                       {c.inputTokens.toLocaleString()} / {c.outputTokens.toLocaleString()}
                     </td>
-                    <td className="whitespace-nowrap px-5 py-3 text-right font-mono text-[13px] tabular-nums">
+                    <td
+                      className={cn(
+                        "whitespace-nowrap px-5 py-3 text-right font-mono text-[13px] tabular-nums",
+                        latencyClass(c.latencyMs),
+                      )}
+                    >
                       {c.latencyMs.toLocaleString()} ms
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 text-right font-mono text-[13px] tabular-nums">

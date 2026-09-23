@@ -9,6 +9,7 @@ import {
   PageHeader,
   SectionHeading,
 } from "@/components/page-header";
+import { Dot, SERIES, Tag, fillClass } from "@/components/tone";
 
 interface TrainingNeed {
   label: string;
@@ -83,6 +84,7 @@ export default function InsightsPage() {
   const cur =
     ws !== "_meta" ? (data?.[ws] as WsInsights | undefined) : undefined;
   const maxNeed = Math.max(1, ...(cur?.trainingNeeds.map((t) => t.count) ?? [1]));
+  const maxTime = Math.max(0, ...(cur?.processImprovements.map((p) => p.avgTimeSeconds) ?? [0]));
 
   return (
     <main id="main" className={PAGE_CLASS}>
@@ -131,14 +133,18 @@ export default function InsightsPage() {
                         {cur.trainingNeeds.map((t, i) => (
                           <li key={i} className="border-b px-5 py-4 last:border-0">
                             <div className="flex items-baseline justify-between gap-3">
-                              <span className="font-medium text-foreground">{t.label}</span>
+                              <span className="flex items-center gap-2.5 font-medium text-foreground">
+                                {/* Same cluster colors as the landing page preview. */}
+                                <Dot tone={SERIES[i % SERIES.length]} className="size-2" />
+                                {t.label}
+                              </span>
                               <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
                                 {t.count} queries
                               </span>
                             </div>
                             <div aria-hidden className="mt-2.5 h-1 overflow-hidden rounded-full bg-foreground/10">
                               <div
-                                className="h-full rounded-full bg-foreground/80"
+                                className={`h-full rounded-full ${fillClass(SERIES[i % SERIES.length])}`}
                                 style={{ width: `${(t.count / maxNeed) * 100}%` }}
                               />
                             </div>
@@ -168,7 +174,10 @@ export default function InsightsPage() {
                         {cur.docGaps.map((d, i) => (
                           <li key={i} className="border-b px-5 py-4 last:border-0">
                             <div className="flex items-baseline justify-between gap-3">
-                              <span className="font-medium text-foreground">{d.topic}</span>
+                              <span className="flex items-center gap-2.5 font-medium text-foreground">
+                                <Dot tone="warning" className="size-2" />
+                                {d.topic}
+                              </span>
                               <span className="shrink-0 rounded-full bg-warning px-2 py-0.5 font-mono text-[11px] tabular-nums text-warning-foreground">
                                 {d.count} queries
                               </span>
@@ -207,7 +216,12 @@ export default function InsightsPage() {
                                 <td className="px-5 py-3 font-medium text-foreground">{p.topic}</td>
                                 <td className="px-5 py-3 text-right font-mono text-[13px] tabular-nums">{p.avgTurns}</td>
                                 <td className="px-5 py-3 text-right font-mono text-[13px] tabular-nums">{p.avgSteps}</td>
-                                <td className="px-5 py-3 text-right font-mono text-[13px] tabular-nums">{p.avgTimeSeconds}s</td>
+                                <td className="px-5 py-3 text-right font-mono text-[13px] tabular-nums">
+                                  {/* Longest first: the slowest topic is the hotspot. */}
+                                  <Tag tone={p.avgTimeSeconds >= maxTime ? "orange" : "neutral"} mono>
+                                    {p.avgTimeSeconds}s
+                                  </Tag>
+                                </td>
                                 <td className="px-5 py-3 text-right font-mono text-[13px] tabular-nums">{p.count}</td>
                               </tr>
                             ))}

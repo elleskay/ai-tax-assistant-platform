@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SectionHeading } from "@/components/page-header";
+import { JsonCode } from "@/components/tone";
 import {
   DEFAULT_CONFIG,
   ROUTING_CONFIG_CHANGED,
@@ -47,7 +48,7 @@ export function PolicyCode({ policy }: { policy: GovernancePolicy }) {
         description="Saved guardrails plus this browser's routing."
       />
       <pre className="dark max-h-96 overflow-auto rounded-xl bg-background p-5 font-mono text-xs leading-relaxed text-foreground ring-1 ring-border">
-        {JSON.stringify(effective, null, 2)}
+        <JsonCode value={JSON.stringify(effective, null, 2)} />
       </pre>
     </section>
   );

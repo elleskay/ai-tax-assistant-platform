@@ -1,5 +1,14 @@
-import { Download } from "lucide-react";
+import {
+  Activity,
+  ArrowRightLeft,
+  CircleDollarSign,
+  Coins,
+  Download,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModelName, textClass, vendorOf, type Tone } from "@/components/tone";
 import { PAGE_CLASS, PageHeader } from "@/components/page-header";
 import {
   aggregateByModel,
@@ -19,6 +28,8 @@ function Stat({
   label,
   value,
   tone,
+  icon: Icon,
+  accent,
   sub,
   href,
   className,
@@ -26,14 +37,17 @@ function Stat({
   label: string;
   value: string;
   tone?: "good" | "warn";
+  icon: LucideIcon;
+  accent: Tone;
   sub?: string;
   href?: string;
   className?: string;
 }) {
   const body = (
     <>
-      <dt className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-        {label}
+      <dt className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Icon className={cn("size-4 shrink-0", textClass(accent))} strokeWidth={1.75} />
+        <span className="flex-1">{label}</span>
         {tone ? (
           <span
             aria-hidden
@@ -66,6 +80,7 @@ function Stat({
 }
 
 function Sparkline({ values, threshold }: { values: number[]; threshold: number }) {
+  const passing = (values[values.length - 1] ?? 0) >= threshold;
   if (values.length < 2) {
     return (
       <p className="py-10 text-center text-sm text-muted-foreground">
@@ -84,18 +99,27 @@ function Sparkline({ values, threshold }: { values: number[]; threshold: number 
   return (
     <svg
       viewBox={`0 0 ${w} ${h}`}
-      className="w-full text-foreground"
+      className={cn("w-full", passing ? "text-success" : "text-destructive")}
       role="img"
       aria-label="Eval pass-rate trend across recent runs"
     >
+      <defs>
+        <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="currentColor" stopOpacity="0.25" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points={`${x(0).toFixed(1)},${h - pad} ${points} ${x(values.length - 1).toFixed(1)},${h - pad}`}
+        fill="url(#trend-fill)"
+      />
       <line
         x1={pad}
         y1={y(threshold)}
         x2={w - pad}
         y2={y(threshold)}
-        stroke="currentColor"
         strokeDasharray="3 3"
-        className="text-muted-foreground/60"
+        className="stroke-warning-foreground/70"
       />
       <polyline
         points={points}
@@ -106,7 +130,13 @@ function Sparkline({ values, threshold }: { values: number[]; threshold: number 
         strokeLinecap="round"
       />
       {values.map((v, i) => (
-        <circle key={i} cx={x(i)} cy={y(v)} r="2.25" fill="currentColor" />
+        <circle
+          key={i}
+          cx={x(i)}
+          cy={y(v)}
+          r="2.5"
+          className={v >= threshold ? "fill-success" : "fill-destructive"}
+        />
       ))}
     </svg>
   );
@@ -168,11 +198,15 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <Stat
             label="Model calls"
+            icon={Activity}
+            accent="indigo"
             value={stats.totalCalls.toLocaleString()}
             sub={`${workspaceCount} workspaces`}
           />
           <Stat
             label={`Eval gate ≥${g.evalGate.threshold}%`}
+            icon={ShieldCheck}
+            accent="emerald"
             value={stats.latestPassRate == null ? "n/a" : `${stats.latestPassRate}%`}
             tone={stats.evalGatePass == null ? undefined : stats.evalGatePass ? "good" : "warn"}
             sub={runs.length ? `latest of ${runs.length} runs` : "no runs yet"}
@@ -180,6 +214,8 @@ export default async function DashboardPage() {
           />
           <Stat
             label="Over cost ceiling"
+            icon={CircleDollarSign}
+            accent="orange"
             value={stats.overCeiling.toLocaleString()}
             tone={stats.overCeiling ? "warn" : "good"}
             sub={`${overCeilingRate.toFixed(1)}% of calls`}
@@ -187,6 +223,8 @@ export default async function DashboardPage() {
           />
           <Stat
             label="Fallbacks"
+            icon={ArrowRightLeft}
+            accent="sunset"
             value={stats.fallbacks.toLocaleString()}
             tone={stats.fallbacks ? "warn" : undefined}
             sub={`${fallbackRate.toFixed(1)}% of calls`}
@@ -194,6 +232,8 @@ export default async function DashboardPage() {
           />
           <Stat
             label="Total cost"
+            icon={Coins}
+            accent="yellow"
             value={usd(stats.totalCostUsd)}
             sub={`${stats.totalCalls.toLocaleString()} calls`}
             className="col-span-2 lg:col-span-1"
@@ -216,14 +256,21 @@ export default async function DashboardPage() {
               {byModel.map((m) => (
                 <li key={m.model} className="flex flex-col gap-2">
                   <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span>{m.model}</span>
+                    <ModelName label={m.model} />
                     <span className="font-mono text-xs tabular-nums text-muted-foreground">
                       {m.calls.toLocaleString()} calls &middot; {usd(m.costUsd)}
                     </span>
                   </div>
                   <div className="h-1 overflow-hidden rounded-full bg-foreground/10">
                     <div
-                      className="h-full rounded-full bg-foreground"
+                      className={cn(
+                        "h-full rounded-full",
+                        vendorOf(m.model) === "anthropic"
+                          ? "bg-vendor-anthropic"
+                          : vendorOf(m.model) === "openai"
+                            ? "bg-vendor-openai"
+                            : "bg-foreground",
+                      )}
                       style={{ width: `${(m.calls / maxModelCalls) * 100}%` }}
                     />
                   </div>

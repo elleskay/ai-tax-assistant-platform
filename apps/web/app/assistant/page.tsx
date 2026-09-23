@@ -35,6 +35,7 @@ import type { ToolPart } from "@/components/ai-elements/step-trace";
 import { loadCustomTools } from "@/lib/custom-tools";
 import { loadConfig } from "@/lib/routing-rules";
 import { cn } from "@/lib/utils";
+import { Dot, ModelName, SERIES } from "@/components/tone";
 import {
   type Conversation as Convo,
   loadConversations,
@@ -625,7 +626,7 @@ export default function ChatPage() {
               </p>
               <div className="mt-9 w-full text-left">{composer(true)}</div>
               <div className="mt-5 flex flex-wrap justify-center gap-2">
-                {topicsFor(workspaceId).map((t) => (
+                {topicsFor(workspaceId).map((t, i) => (
                   <button
                     key={t.label}
                     type="button"
@@ -633,6 +634,7 @@ export default function ChatPage() {
                     title={t.question}
                     className="inline-flex cursor-pointer items-baseline gap-1.5 rounded-full bg-card px-4 py-2 text-[13px] transition-colors hover:bg-secondary"
                   >
+                    <Dot tone={SERIES[i % SERIES.length]} className="size-2 self-center" />
                     <span className="font-medium text-foreground">{t.label}</span>
                     <span className="text-xs text-muted-foreground">{t.hint}</span>
                   </button>
@@ -737,7 +739,7 @@ export default function ChatPage() {
                           : null;
                         return (
                           <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                            Routed to {meta.model}
+                            Routed to <ModelName label={meta.model} className="gap-1.5" />
                             {tokens !== null ? ` · ${tokens.toLocaleString()} tokens` : ""}
                             {typeof meta.costUsd === "number"
                               ? ` · $${meta.costUsd.toFixed(4)}`
@@ -777,14 +779,15 @@ export default function ChatPage() {
                 {/* Scenario shortcuts stay available mid-chat so each one can
                     be tried in the same conversation. */}
                 <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
-                  {topicsFor(workspaceId).map((t) => (
+                  {topicsFor(workspaceId).map((t, i) => (
                     <button
                       key={t.label}
                       type="button"
                       onClick={() => submit(t.question)}
                       title={`${t.question} (${t.hint})`}
-                      className="cursor-pointer rounded-full bg-card px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-card px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                     >
+                      <Dot tone={SERIES[i % SERIES.length]} />
                       {t.label}
                     </button>
                   ))}

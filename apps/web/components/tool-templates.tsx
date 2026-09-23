@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, Plus, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { KIND_TONE, Tag } from "@/components/tone";
 import {
   loadCustomTools,
   saveCustomTools,
@@ -115,12 +116,10 @@ export function ToolTemplates() {
                     >
                       <div className="min-w-0 flex-1">
                         <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-                          <span className="font-mono text-sm font-medium text-foreground">
+                          <span className="font-mono text-sm font-medium text-[var(--syn-fn)]">
                             {tool.name}
                           </span>
-                          <span className="text-xs text-muted-foreground">
-                            {kindLabel[tool.kind]}
-                          </span>
+                          <Tag tone={KIND_TONE[tool.kind]}>{kindLabel[tool.kind]}</Tag>
                         </p>
                         <p className="mt-0.5 text-sm text-muted-foreground">{blurb}</p>
                       </div>
