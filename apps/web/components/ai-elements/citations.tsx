@@ -146,9 +146,9 @@ function SourceItem({ source, id }: { source: Source; id: string }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-start gap-2 rounded px-1.5 py-1 text-left text-xs leading-relaxed transition-colors hover:bg-accent"
+        className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs leading-relaxed transition-colors hover:bg-accent"
       >
-        <span className="font-semibold text-primary">[{source.n}]</span>
+        <span className="font-mono font-medium text-muted-foreground">[{source.n}]</span>
         <span className="min-w-0 flex-1">
           <span className="font-medium text-foreground">{source.filename}</span>
           <span className="text-muted-foreground"> · {source.location}</span>
@@ -161,7 +161,7 @@ function SourceItem({ source, id }: { source: Source; id: string }) {
         />
       </button>
       {open ? (
-        <div className="mx-1.5 mb-1 mt-0.5 max-h-72 overflow-y-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 px-2.5 py-2 text-[11px] leading-relaxed text-foreground/80">
+        <div className="mx-2 mb-1.5 mt-0.5 max-h-72 overflow-y-auto whitespace-pre-wrap break-words rounded-md bg-muted px-3 py-2 text-[11.5px] leading-relaxed text-foreground/85">
           {source.text}
         </div>
       ) : null}
@@ -205,9 +205,9 @@ export function Citations({
   return (
     <div
       data-testid="citations"
-      className="not-prose mt-2 w-full rounded-md border bg-muted/30 px-3 py-2"
+      className="not-prose mt-1 w-full rounded-lg bg-card px-1.5 py-2 text-sm"
     >
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="mb-1 px-2 text-xs font-medium text-muted-foreground">
         Sources
       </p>
       <SourceList sources={sources} messageId={messageId} />

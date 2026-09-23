@@ -9,7 +9,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import type { ChatStatus, FileUIPart } from "ai";
-import { CornerDownLeftIcon, SquareIcon, XIcon } from "lucide-react";
+import { ArrowUpIcon, SquareIcon, XIcon } from "lucide-react";
 import type {
   ComponentProps,
   FormEvent,
@@ -66,7 +66,7 @@ export const PromptInput = ({
 
   return (
     <form className={cn("w-full", className)} onSubmit={handleSubmit} {...props}>
-      <InputGroup className="overflow-hidden">{children}</InputGroup>
+      <InputGroup className="overflow-hidden rounded-[26px] border-foreground/10 bg-card has-[[data-slot=input-group-control]:focus-visible]:border-foreground/25 has-[[data-slot=input-group-control]:focus-visible]:ring-0">{children}</InputGroup>
     </form>
   );
 };
@@ -107,7 +107,7 @@ export const PromptInputTextarea = ({
 
   return (
     <InputGroupTextarea
-      className={cn("field-sizing-content max-h-48 min-h-16", className)}
+      className={cn("field-sizing-content max-h-48 min-h-16 px-5 pt-4 placeholder:text-muted-foreground/70", className)}
       name="message"
       onCompositionEnd={() => setIsComposing(false)}
       onCompositionStart={() => setIsComposing(true)}
@@ -129,7 +129,7 @@ export const PromptInputFooter = ({
 }: PromptInputFooterProps) => (
   <InputGroupAddon
     align="block-end"
-    className={cn("justify-between gap-1", className)}
+    className={cn("justify-between gap-3 px-3 pb-3", className)}
     {...props}
   />
 );
@@ -151,7 +151,7 @@ export const PromptInputSubmit = ({
 }: PromptInputSubmitProps) => {
   const isGenerating = status === "submitted" || status === "streaming";
 
-  let Icon = <CornerDownLeftIcon className="size-4" />;
+  let Icon = <ArrowUpIcon className="size-4" strokeWidth={2.25} />;
 
   if (status === "submitted") {
     Icon = <Spinner />;

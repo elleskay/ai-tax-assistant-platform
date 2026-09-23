@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Lightbulb,
-  GraduationCap,
-  FileWarning,
-  Timer,
-  Info,
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { PageTabs } from "@/components/page-tabs";
+import {
+  EmptyState,
+  Notice,
+  PAGE_CLASS,
+  PageHeader,
+  SectionHeading,
+} from "@/components/page-header";
 
 interface TrainingNeed {
   label: string;
@@ -49,24 +47,17 @@ function readCookie(name: string): string | null {
 }
 
 function Section({
-  icon: Icon,
   title,
   blurb,
   children,
 }: {
-  icon: typeof Lightbulb;
   title: string;
   blurb: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3">
-      <div>
-        <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-navy">
-          <Icon className="h-4 w-4" /> {title}
-        </h3>
-        <p className="text-sm text-muted-foreground">{blurb}</p>
-      </div>
+    <section>
+      <SectionHeading title={title} description={blurb} />
       {children}
     </section>
   );
@@ -91,177 +82,146 @@ export default function InsightsPage() {
   // cookie could name the "_meta" key, which is not a workspace entry.
   const cur =
     ws !== "_meta" ? (data?.[ws] as WsInsights | undefined) : undefined;
+  const maxNeed = Math.max(1, ...(cur?.trainingNeeds.map((t) => t.count) ?? [1]));
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 pb-16">
-      <div className="mb-6">
-        <h2 className="flex items-center gap-2 text-xl font-semibold text-navy">
-          <Lightbulb className="h-5 w-5" /> Usage analytics
-        </h2>
-        <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          What this workspace&apos;s own usage reveals: the topics officers ask
-          about most (training needs), where guidance is missing (documentation
-          gaps), and where work takes longest (process improvement). Mined in
-          Python with embeddings and clustering.
-        </p>
-      </div>
+    <main id="main" className={PAGE_CLASS}>
+      <PageHeader
+        eyebrow="Workspace"
+        title="Usage analytics"
+        description="What officers ask, where guidance runs out, where work stalls."
+      />
 
-      {/* The main landmark wraps every state so the skip link always has a
-          target, not only the has-data branch. */}
-      {err ? (
-        <main id="main">
+      <div className="mt-8">
+        {err ? (
           <p className="text-sm text-muted-foreground">
             No insights artifact found. Generate it with{" "}
-            <code>services/insights/generate.py</code>.
+            <code className="font-mono text-[13px]">services/insights/generate.py</code>.
           </p>
-        </main>
-      ) : !data ? (
-        <main id="main">
+        ) : !data ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
-        </main>
-      ) : !cur ? (
-        <main id="main">
-          <Card className="border-dashed shadow-none">
-            <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
-              <Info className="h-8 w-8 text-muted-foreground" />
-              <p className="text-sm font-medium text-foreground">
-                No usage analytics for this workspace yet
-              </p>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                Analytics are mined from this workspace&apos;s own usage, so a new
-                workspace starts empty and fills in as officers use the assistant.
-              </p>
-            </CardContent>
-          </Card>
-        </main>
-      ) : (
-        <main id="main">
-          <Card className="mb-6 border-dashed">
-            <CardContent className="flex items-start gap-2 py-3 text-xs text-muted-foreground">
-              <Info className="mt-0.5 h-4 w-4 shrink-0" />
-              Illustrative, <span className="font-medium">synthetic</span> usage data
-              (live usage is too sparse for a demo).
+        ) : !cur ? (
+          <EmptyState title="No usage yet">
+            Fills in as officers use the assistant.
+          </EmptyState>
+        ) : (
+          <>
+            <Notice>
+              Synthetic sample: {cur.name}, {cur.totalInteractions.toLocaleString()}{" "}
+              interactions.
               {meta ? (
-                <span>
+                <span className="text-muted-foreground/70">
                   {" "}
-                  Embedding: {meta.embeddingPath}; clustering: {meta.clusterPath}.
+                  {meta.embeddingPath} &middot; {meta.clusterPath}
                 </span>
               ) : null}
-            </CardContent>
-          </Card>
-          <p className="text-sm text-muted-foreground">
-            Sample dataset:{" "}
-            <span className="font-medium text-foreground">{cur.name}</span> &middot;{" "}
-            {cur.totalInteractions.toLocaleString()} interactions analysed.
-          </p>
-          <PageTabs
-            ariaLabel="Usage analytics sections"
-            tabs={[
-              {
-                id: "training",
-                label: "Training needs",
-                content: (
-                  <Section
-                    icon={GraduationCap}
-                    title="Training needs"
-                    blurb="Largest clusters of similar prompts: topics officers ask about repeatedly, where focused training would help most."
-                  >
-                    <ul className="flex flex-col gap-2">
-                      {cur.trainingNeeds.map((t, i) => (
-                        <li key={i}>
-                          <Card className="shadow-soft">
-                            <CardContent className="py-3">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="font-medium text-foreground">{t.label}</span>
-                                <Badge className="bg-secondary text-secondary-foreground hover:bg-secondary">
-                                  {t.count} queries
-                                </Badge>
-                              </div>
-                              <p className="mt-1 text-sm text-muted-foreground">{t.recommendation}</p>
-                              {t.examplePrompts?.length ? (
-                                <p className="mt-1 text-xs italic text-muted-foreground">
-                                  e.g. {t.examplePrompts.slice(0, 2).join("  /  ")}
-                                </p>
-                              ) : null}
-                            </CardContent>
-                          </Card>
-                        </li>
-                      ))}
-                    </ul>
-                  </Section>
-                ),
-              },
-              {
-                id: "gaps",
-                label: "Doc & process gaps",
-                content: (
-                  <Section
-                    icon={FileWarning}
-                    title="Documentation / process gaps"
-                    blurb="Topics where retrieval found little or answers scored low: the guidance that is missing or unclear."
-                  >
-                    <ul className="flex flex-col gap-2">
-                      {cur.docGaps.map((d, i) => (
-                        <li key={i}>
-                          <Card className="shadow-soft">
-                            <CardContent className="py-3">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="font-medium text-foreground">{d.topic}</span>
-                                <Badge className="bg-[var(--warning)] text-[var(--warning-foreground)] hover:bg-[var(--warning)]">
-                                  {d.count} queries
-                                </Badge>
-                              </div>
-                              <p className="mt-1 text-sm text-muted-foreground">{d.reason}</p>
-                            </CardContent>
-                          </Card>
-                        </li>
-                      ))}
-                    </ul>
-                  </Section>
-                ),
-              },
-              {
-                id: "process",
-                label: "Process improvement",
-                content: (
-                  <Section
-                    icon={Timer}
-                    title="Process-improvement areas"
-                    blurb="Topics where officers spend the most effort (turns, steps, time): candidates for process redesign."
-                  >
-                    <Card className="shadow-soft">
-                      <CardContent className="overflow-x-auto p-0">
+            </Notice>
+            <PageTabs
+              ariaLabel="Usage analytics sections"
+              tabs={[
+                {
+                  id: "training",
+                  label: "Training needs",
+                  content: (
+                    <Section
+                      title="Training needs"
+                      blurb="The most-asked topics."
+                    >
+                      <ul className="overflow-hidden rounded-lg bg-card">
+                        {cur.trainingNeeds.map((t, i) => (
+                          <li key={i} className="border-b px-5 py-4 last:border-0">
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className="font-medium text-foreground">{t.label}</span>
+                              <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                                {t.count} queries
+                              </span>
+                            </div>
+                            <div aria-hidden className="mt-2.5 h-1 overflow-hidden rounded-full bg-foreground/10">
+                              <div
+                                className="h-full rounded-full bg-foreground/80"
+                                style={{ width: `${(t.count / maxNeed) * 100}%` }}
+                              />
+                            </div>
+                            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                              {t.recommendation}
+                            </p>
+                            {t.examplePrompts?.length ? (
+                              <p className="mt-1 text-xs italic text-muted-foreground">
+                                e.g. {t.examplePrompts.slice(0, 2).join("  /  ")}
+                              </p>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </Section>
+                  ),
+                },
+                {
+                  id: "gaps",
+                  label: "Doc gaps",
+                  content: (
+                    <Section
+                      title="Documentation gaps"
+                      blurb="Where retrieval came up short."
+                    >
+                      <ul className="overflow-hidden rounded-lg bg-card">
+                        {cur.docGaps.map((d, i) => (
+                          <li key={i} className="border-b px-5 py-4 last:border-0">
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className="font-medium text-foreground">{d.topic}</span>
+                              <span className="shrink-0 rounded-full bg-warning px-2 py-0.5 font-mono text-[11px] tabular-nums text-warning-foreground">
+                                {d.count} queries
+                              </span>
+                            </div>
+                            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                              {d.reason}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    </Section>
+                  ),
+                },
+                {
+                  id: "process",
+                  label: "Process hotspots",
+                  content: (
+                    <Section
+                      title="Process hotspots"
+                      blurb="Where work takes longest."
+                    >
+                      <div className="overflow-x-auto rounded-lg bg-card">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                              <th className="px-4 py-3 font-semibold">Topic</th>
-                              <th className="px-4 py-3 text-right font-semibold">Avg turns</th>
-                              <th className="px-4 py-3 text-right font-semibold">Avg steps</th>
-                              <th className="px-4 py-3 text-right font-semibold">Avg time</th>
-                              <th className="px-4 py-3 text-right font-semibold">Cases</th>
+                            <tr className="border-b text-left text-xs text-muted-foreground">
+                              <th scope="col" className="px-5 py-3 font-medium">Topic</th>
+                              <th scope="col" className="px-5 py-3 text-right font-medium">Avg turns</th>
+                              <th scope="col" className="px-5 py-3 text-right font-medium">Avg steps</th>
+                              <th scope="col" className="px-5 py-3 text-right font-medium">Avg time</th>
+                              <th scope="col" className="px-5 py-3 text-right font-medium">Cases</th>
                             </tr>
                           </thead>
                           <tbody>
                             {cur.processImprovements.map((p, i) => (
                               <tr key={i} className="border-b last:border-0">
-                                <td className="px-4 py-2.5 font-medium text-foreground">{p.topic}</td>
-                                <td className="px-4 py-2.5 text-right tabular-nums">{p.avgTurns}</td>
-                                <td className="px-4 py-2.5 text-right tabular-nums">{p.avgSteps}</td>
-                                <td className="px-4 py-2.5 text-right tabular-nums">{p.avgTimeSeconds}s</td>
-                                <td className="px-4 py-2.5 text-right tabular-nums">{p.count}</td>
+                                <td className="px-5 py-3 font-medium text-foreground">{p.topic}</td>
+                                <td className="px-5 py-3 text-right font-mono text-[13px] tabular-nums">{p.avgTurns}</td>
+                                <td className="px-5 py-3 text-right font-mono text-[13px] tabular-nums">{p.avgSteps}</td>
+                                <td className="px-5 py-3 text-right font-mono text-[13px] tabular-nums">{p.avgTimeSeconds}s</td>
+                                <td className="px-5 py-3 text-right font-mono text-[13px] tabular-nums">{p.count}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
-                      </CardContent>
-                    </Card>
-                  </Section>
-                ),
-              },
-            ]}
-          />
-        </main>
-      )}
-    </div>
+                      </div>
+                    </Section>
+                  ),
+                },
+              ]}
+            />
+          </>
+        )}
+      </div>
+    </main>
   );
 }

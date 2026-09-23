@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Building2, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { DropdownMenu } from "radix-ui";
+import { Check, ChevronsUpDown, Settings2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { popoverItemClass, popoverListClass } from "@/components/ui/select";
 import {
   readWorkspaceCookie,
   setWorkspaceCookie,
@@ -16,7 +20,8 @@ interface Ws {
  * Active-workspace switcher (one workspace per tax type). No auth: selecting a
  * workspace sets the `workspace` cookie, which is sent with every request, so
  * server pages and /api/chat scope to it, then reloads. Mirrors to localStorage
- * for client code that reads the active workspace directly.
+ * for client code that reads the active workspace directly. A styled menu
+ * rather than a native <select>, whose popup the browser draws in OS style.
  */
 export function WorkspaceSwitcher() {
   const [list, setList] = useState<Ws[]>([]);
@@ -45,39 +50,54 @@ export function WorkspaceSwitcher() {
   }, []);
 
   function change(id: string) {
+    if (id === active) return;
     setWorkspaceCookie(id);
     setActive(id);
     location.reload();
   }
 
   if (list.length === 0) return null;
+  const current = list.find((w) => w.id === active);
 
   return (
-    <label className="relative flex h-9 w-full items-center gap-2 rounded-lg border bg-card px-2.5 text-sm">
-      <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-      <span className="sr-only">Active department workspace</span>
-      {/* appearance-none drops the native arrow (which browsers draw over
-          long option text); pr-6 reserves room for our chevron instead, and
-          truncate ellipsizes names that still do not fit. */}
-      <select
-        value={active}
-        onChange={(e) => change(e.target.value)}
-        className="w-full min-w-0 flex-1 cursor-pointer appearance-none truncate bg-transparent pr-6 text-sm font-medium text-foreground outline-none"
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger
+        aria-label={`Active department workspace: ${current?.name ?? "none"}`}
+        className="group flex h-9 w-full items-center gap-2 rounded-full bg-secondary px-3.5 text-[13px] font-medium text-foreground outline-none transition-colors hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-ring/60 data-[state=open]:bg-secondary/70"
       >
-        {list.map((w) => (
-          <option
-            key={w.id}
-            value={w.id}
-            className="bg-popover text-popover-foreground"
-          >
-            {w.name}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        aria-hidden
-        className="pointer-events-none absolute right-2.5 h-4 w-4 shrink-0 text-muted-foreground"
-      />
-    </label>
+        <span className="min-w-0 flex-1 truncate text-left">
+          {current?.name ?? "Select a workspace"}
+        </span>
+        <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="start"
+          sideOffset={6}
+          className={cn(popoverListClass, "min-w-(--radix-dropdown-menu-trigger-width)")}
+        >
+          <DropdownMenu.Label className="px-3 pb-1 pt-2 text-xs text-muted-foreground">
+            Workspaces
+          </DropdownMenu.Label>
+          <DropdownMenu.RadioGroup value={active} onValueChange={change}>
+            {list.map((w) => (
+              <DropdownMenu.RadioItem key={w.id} value={w.id} className={popoverItemClass}>
+                <span className="truncate">{w.name}</span>
+                <DropdownMenu.ItemIndicator className="absolute right-2.5 flex items-center">
+                  <Check className="size-4" />
+                </DropdownMenu.ItemIndicator>
+              </DropdownMenu.RadioItem>
+            ))}
+          </DropdownMenu.RadioGroup>
+          <DropdownMenu.Separator className="-mx-1 my-1 h-px bg-border" />
+          <DropdownMenu.Item asChild className={cn(popoverItemClass, "text-muted-foreground data-[highlighted]:text-foreground")}>
+            <Link href="/workspaces">
+              <Settings2 className="size-4" strokeWidth={1.75} />
+              Manage workspaces
+            </Link>
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }

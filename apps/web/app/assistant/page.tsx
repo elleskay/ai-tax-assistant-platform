@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart, type UIMessage } from "ai";
-import { Info, Plus, MessageSquare, Trash2 } from "lucide-react";
+import { Plus, MessageSquare, Trash2 } from "lucide-react";
 import {
   Conversation,
   ConversationContent,
@@ -491,20 +491,19 @@ export default function ChatPage() {
     }
   }
 
+  const currentTitle = empty ? "New chat" : titleFromMessages(messages);
+
   const composer = (large: boolean) => (
-    <PromptInput
-      onSubmit={handleSubmit}
-      className={large ? "rounded-2xl border shadow-sm" : "rounded-xl border"}
-    >
+    <PromptInput onSubmit={handleSubmit}>
       <PromptInputTextarea
         aria-label="Ask the assistant"
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="Ask about the rules, draft a reply, or triage a case..."
+        placeholder="Ask about a rule, draft a reply, or triage a case"
+        className={large ? "min-h-24 md:text-[15px]" : undefined}
       />
       <PromptInputFooter>
-        <span className="flex items-center gap-1.5 pl-1 text-xs text-muted-foreground">
-          <Info className="h-3.5 w-3.5" />
+        <span className="pl-1 text-xs font-normal text-muted-foreground">
           General guidance for the officer&apos;s judgement, not a final assessment.
         </span>
         <PromptInputSubmit
@@ -516,56 +515,58 @@ export default function ChatPage() {
     </PromptInput>
   );
 
+  const historyList = (
+    <ul className="flex flex-col gap-0.5">
+      {conversations.map((c) => (
+        <li key={c.id} className="group flex items-center">
+          <button
+            type="button"
+            onClick={() => openChat(c.id)}
+            aria-current={c.id === currentId ? "true" : undefined}
+            className={cn(
+              "min-w-0 flex-1 truncate rounded-md px-3 py-2 text-left text-[13px] transition-colors",
+              c.id === currentId
+                ? "bg-secondary text-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            )}
+          >
+            {c.title || "New chat"}
+          </button>
+          <button
+            type="button"
+            aria-label={`Delete ${c.title || "chat"}`}
+            onClick={() => deleteChat(c.id)}
+            className="ml-0.5 rounded-full p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
-    <div className="flex h-[calc(100dvh-4rem)] min-h-0 w-full">
-      {/* History sidebar */}
+    <div className="flex h-[calc(100dvh-3.5rem)] min-h-0 w-full md:h-dvh">
+      {/* History */}
       <aside
         style={{ width: history.width }}
-        className="hidden shrink-0 flex-col border-r bg-card md:flex"
+        className="hidden shrink-0 flex-col bg-background md:flex"
       >
-        <div className="p-3">
+        <div className="flex h-16 shrink-0 items-center justify-between gap-2 pl-5 pr-3">
+          <span className="text-sm font-medium">History</span>
           <button
             type="button"
             onClick={newChat}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-secondary px-3.5 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary/70"
           >
-            <Plus className="h-4 w-4" /> New chat
+            <Plus className="h-3.5 w-3.5" /> New chat
           </button>
         </div>
-        <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          History
-        </div>
-        <nav className="flex-1 overflow-y-auto px-2 pb-3">
+        <nav aria-label="Conversation history" className="flex-1 overflow-y-auto px-2 pb-3">
           {conversations.length === 0 ? (
-            <p className="px-2 py-2 text-xs text-muted-foreground">No conversations yet.</p>
+            <p className="px-3 py-2 text-[13px] text-muted-foreground">Nothing yet.</p>
           ) : (
-            <ul className="flex flex-col gap-0.5">
-              {conversations.map((c) => (
-                <li key={c.id} className="group flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => openChat(c.id)}
-                    aria-current={c.id === currentId ? "true" : undefined}
-                    className={`flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-2 text-left text-sm ${
-                      c.id === currentId
-                        ? "bg-accent text-accent-foreground"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <MessageSquare className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{c.title || "New chat"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Delete ${c.title || "chat"}`}
-                    onClick={() => deleteChat(c.id)}
-                    className="ml-0.5 rounded-md p-1 text-muted-foreground opacity-0 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </li>
-              ))}
-            </ul>
+            historyList
           )}
         </nav>
       </aside>
@@ -579,99 +580,70 @@ export default function ChatPage() {
       />
 
       {/* Chat column */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Mobile chat bar: history toggle + new chat */}
-        <div className="flex items-center justify-between border-b px-4 py-2 md:hidden">
-          <button
-            type="button"
-            onClick={() => setShowHistory((v) => !v)}
-            aria-expanded={showHistory}
-            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium text-foreground"
-          >
-            <MessageSquare className="h-4 w-4" /> History
-          </button>
-          <button
-            type="button"
-            onClick={newChat}
-            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium text-foreground"
-          >
-            <Plus className="h-4 w-4" /> New chat
-          </button>
+      <main id="main" className="flex min-w-0 flex-1 flex-col">
+        <div className="flex h-12 shrink-0 items-center gap-3 px-4 md:h-16 md:px-6">
+          <p className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+            {currentTitle}
+          </p>
+          {/* Mobile: history toggle + new chat */}
+          <div className="flex shrink-0 items-center gap-1.5 md:hidden">
+            <button
+              type="button"
+              onClick={() => setShowHistory((v) => !v)}
+              aria-expanded={showHistory}
+              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-secondary px-3 text-[13px] font-medium text-foreground"
+            >
+              <MessageSquare className="h-3.5 w-3.5" /> History
+            </button>
+            <button
+              type="button"
+              onClick={newChat}
+              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-secondary px-3 text-[13px] font-medium text-foreground"
+            >
+              <Plus className="h-3.5 w-3.5" /> New chat
+            </button>
+          </div>
         </div>
         {showHistory ? (
-          <div className="max-h-64 overflow-y-auto border-b bg-card p-2 md:hidden">
+          <div className="max-h-64 overflow-y-auto border-y bg-card p-2 md:hidden">
             {conversations.length === 0 ? (
-              <p className="px-2 py-2 text-xs text-muted-foreground">No conversations yet.</p>
+              <p className="px-3 py-2 text-[13px] text-muted-foreground">Nothing yet.</p>
             ) : (
-              <ul className="flex flex-col gap-0.5">
-                {conversations.map((c) => (
-                  <li key={c.id} className="group flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => openChat(c.id)}
-                      aria-current={c.id === currentId ? "true" : undefined}
-                      className={`flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-2 text-left text-sm ${
-                        c.id === currentId
-                          ? "bg-accent text-accent-foreground"
-                          : "text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      <MessageSquare className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="truncate">{c.title || "New chat"}</span>
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Delete ${c.title || "chat"}`}
-                      onClick={() => deleteChat(c.id)}
-                      className="ml-0.5 rounded-md p-1 text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              historyList
             )}
           </div>
         ) : null}
 
         {empty ? (
-          <main
-            id="main"
-            className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center gap-8 px-4 pt-24 pb-24 text-center"
-          >
-            <span className="rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-gold-foreground">
-              An assistant for tax officers
-            </span>
-            <div className="flex flex-col gap-4">
-              <h1 className="text-4xl font-semibold tracking-tight text-navy sm:text-5xl">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col items-center justify-center px-5 pb-16 pt-6 text-center">
+              <h1 className="text-4xl leading-tight tracking-tight sm:text-5xl">
                 Answers from your own documents.
               </h1>
-              <p className="mx-auto max-w-md text-base leading-relaxed text-muted-foreground">
-                Ask about the rules, draft a reply for your review, or triage a
-                case. Every answer is grounded in this workspace&apos;s documents,
-                with citations.
+              <p className="mt-4 text-base text-muted-foreground">
+                Ask, draft, or triage. Every answer cited.
               </p>
+              <div className="mt-9 w-full text-left">{composer(true)}</div>
+              <div className="mt-5 flex flex-wrap justify-center gap-2">
+                {topicsFor(workspaceId).map((t) => (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => submit(t.question)}
+                    title={t.question}
+                    className="inline-flex cursor-pointer items-baseline gap-1.5 rounded-full bg-card px-4 py-2 text-[13px] transition-colors hover:bg-secondary"
+                  >
+                    <span className="font-medium text-foreground">{t.label}</span>
+                    <span className="text-xs text-muted-foreground">{t.hint}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-2.5">
-              {topicsFor(workspaceId).map((t) => (
-                <button
-                  key={t.label}
-                  type="button"
-                  onClick={() => submit(t.question)}
-                  title={t.question}
-                  className="inline-flex cursor-pointer flex-col items-center rounded-xl bg-secondary px-4 py-2 text-center transition-[filter] hover:brightness-95"
-                >
-                  <span className="text-sm font-medium text-secondary-foreground">{t.label}</span>
-                  <span className="text-[11px] text-muted-foreground">{t.hint}</span>
-                </button>
-              ))}
-            </div>
-            <div className="w-full max-w-3xl">{composer(true)}</div>
-          </main>
+          </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
             <Conversation className="flex-1">
-              <ConversationContent id="main" className="mx-auto w-full max-w-4xl gap-5 px-4 py-6">
+              <ConversationContent className="mx-auto w-full max-w-3xl gap-8 px-5 pb-8 pt-4">
                 {messages.map((message) => {
                   // Cited sources for this answer, so inline [n] markers can be
                   // linkified to the matching source in the Sources block.
@@ -685,7 +657,7 @@ export default function ChatPage() {
                       : undefined;
                   // On xl, an answer can be clicked to show its steps/sources in
                   // the panel (works when there is nothing to scroll). The active
-                  // one carries a left accent so it is clear which is shown.
+                  // one carries a left rule so it is clear which is shown.
                   const selectable = isWide && message.role === "assistant";
                   const isActiveAnswer = selectable && message.id === activeMsgId;
                   return (
@@ -717,8 +689,8 @@ export default function ChatPage() {
                     }
                     className={cn(
                       selectable &&
-                        "cursor-pointer border-l-2 border-transparent pl-3 transition-colors hover:border-border",
-                      isActiveAnswer && "border-primary/60",
+                        "-ml-4 cursor-pointer border-l-2 border-transparent pl-[14px] transition-colors hover:border-foreground/15",
+                      isActiveAnswer && "border-foreground/35 hover:border-foreground/35",
                     )}
                     style={{ animation: "var(--animate-msg-in)" }}
                   >
@@ -764,13 +736,13 @@ export default function ChatPage() {
                           ? meta.usage.input + meta.usage.output
                           : null;
                         return (
-                          <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
+                          <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
                             Routed to {meta.model}
                             {tokens !== null ? ` · ${tokens.toLocaleString()} tokens` : ""}
                             {typeof meta.costUsd === "number"
                               ? ` · $${meta.costUsd.toFixed(4)}`
                               : ""}
-                          </span>
+                          </p>
                         );
                       })()}
                     </MessageContent>
@@ -792,26 +764,26 @@ export default function ChatPage() {
               <ConversationScrollButton />
             </Conversation>
 
-            <div className="shrink-0 px-4 py-4">
-              <div className="mx-auto w-full max-w-4xl">
+            <div className="shrink-0 px-5 pb-5 pt-2">
+              <div className="mx-auto w-full max-w-3xl">
                 {error ? (
                   <p
                     role="alert"
-                    className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    className="mb-2 rounded-lg bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
                   >
-                    Something went wrong reaching the assistant. Please try again.
+                    Couldn&apos;t reach the assistant. Try again.
                   </p>
                 ) : null}
-                {/* Scenario chips stay available mid-chat so each one can be
-                    tried in the same conversation. */}
-                <div className="mb-2 flex flex-wrap gap-1.5">
+                {/* Scenario shortcuts stay available mid-chat so each one can
+                    be tried in the same conversation. */}
+                <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
                   {topicsFor(workspaceId).map((t) => (
                     <button
                       key={t.label}
                       type="button"
                       onClick={() => submit(t.question)}
                       title={`${t.question} (${t.hint})`}
-                      className="cursor-pointer rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground transition-[filter] hover:brightness-95"
+                      className="cursor-pointer rounded-full bg-card px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                     >
                       {t.label}
                     </button>
@@ -822,7 +794,7 @@ export default function ChatPage() {
             </div>
           </div>
         )}
-      </div>
+      </main>
 
       {/* Inspector: agent steps + cited sources for the active answer (xl+) */}
       {isWide ? (
@@ -835,7 +807,7 @@ export default function ChatPage() {
           />
           <aside
             style={{ width: inspector.width }}
-            className="flex shrink-0 flex-col border-l bg-card"
+            className="flex shrink-0 flex-col bg-background"
           >
             <Inspector message={activeMessage} />
           </aside>

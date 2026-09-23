@@ -10,7 +10,6 @@ import {
   ListOrderedIcon,
   XCircleIcon,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 /*
@@ -33,20 +32,20 @@ const statusLabels: Record<ToolPart["state"], string> = {
 };
 
 const statusIcons: Record<ToolPart["state"], ReactNode> = {
-  "approval-requested": <ClockIcon className="size-4 text-yellow-600" />,
-  "approval-responded": <CheckCircleIcon className="size-4 text-blue-600" />,
-  "input-available": <ClockIcon className="size-4 animate-pulse" />,
-  "input-streaming": <CircleIcon className="size-4" />,
-  "output-available": <CheckCircleIcon className="size-4 text-green-600" />,
-  "output-denied": <XCircleIcon className="size-4 text-orange-600" />,
-  "output-error": <XCircleIcon className="size-4 text-red-600" />,
+  "approval-requested": <ClockIcon className="size-3.5 text-warning-foreground" />,
+  "approval-responded": <CheckCircleIcon className="size-3.5 text-primary" />,
+  "input-available": <ClockIcon className="size-3.5 animate-pulse" />,
+  "input-streaming": <CircleIcon className="size-3.5" />,
+  "output-available": <CheckCircleIcon className="size-3.5 text-success" />,
+  "output-denied": <XCircleIcon className="size-3.5 text-warning-foreground" />,
+  "output-error": <XCircleIcon className="size-3.5 text-destructive" />,
 };
 
 export const getStatusBadge = (status: ToolPart["state"]) => (
-  <Badge className="gap-1.5 rounded-full text-xs" variant="secondary">
+  <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
     {statusIcons[status]}
     {statusLabels[status]}
-  </Badge>
+  </span>
 );
 
 function toolName(part: ToolPart): string {
@@ -72,13 +71,13 @@ export function StepList({
   return (
     <ol className={cn("flex flex-col gap-3", className)}>
       {parts.map((part, i) => (
-        <li key={part.toolCallId ?? i} data-testid="step" className="flex gap-3">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
+        <li key={part.toolCallId ?? i} data-testid="step" className="flex gap-2.5">
+          <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-[11px] text-muted-foreground">
             {i + 1}
           </span>
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             <span className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-sm font-semibold text-navy">
+              <span className="font-mono text-[13px] font-medium text-heading">
                 {toolName(part)}
               </span>
               {getStatusBadge(part.state)}
@@ -86,7 +85,7 @@ export function StepList({
             {part.input !== undefined ? (
               <pre
                 data-testid="step-input"
-                className="overflow-x-auto whitespace-pre-wrap rounded-md bg-muted/50 p-2 font-mono text-xs text-muted-foreground"
+                className="overflow-x-auto whitespace-pre-wrap rounded-md bg-muted px-2.5 py-2 font-mono text-[11.5px] leading-relaxed text-muted-foreground"
               >
                 {asText(part.input)}
               </pre>
@@ -94,13 +93,13 @@ export function StepList({
             {part.state === "output-available" ? (
               <pre
                 data-testid="step-output"
-                className="overflow-x-auto whitespace-pre-wrap rounded-md bg-muted/50 p-2 font-mono text-xs text-foreground"
+                className="overflow-x-auto whitespace-pre-wrap rounded-md bg-muted px-2.5 py-2 font-mono text-[11.5px] leading-relaxed text-foreground"
               >
                 {asText(part.output)}
               </pre>
             ) : null}
             {part.state === "output-error" ? (
-              <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-destructive/10 p-2 font-mono text-xs text-destructive">
+              <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-destructive/10 px-2.5 py-2 font-mono text-[11.5px] text-destructive">
                 {part.errorText}
               </pre>
             ) : null}
@@ -125,16 +124,16 @@ export function StepTrace({
   return (
     <div
       data-testid="step-trace"
-      className={cn("not-prose my-1 w-full rounded-md border", className)}
+      className={cn("not-prose my-1 w-full rounded-lg bg-card text-sm", className)}
     >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-4 p-3"
+        className="flex w-full items-center justify-between gap-4 rounded-lg px-3.5 py-2.5 transition-colors hover:bg-accent"
       >
-        <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <ListOrderedIcon className="size-4 text-muted-foreground" />
+        <span className="flex items-center gap-2 text-[13px] font-medium text-foreground">
+          <ListOrderedIcon className="size-3.5 text-muted-foreground" />
           Agent steps ({parts.length})
         </span>
         <ChevronDownIcon
@@ -144,7 +143,7 @@ export function StepTrace({
           )}
         />
       </button>
-      {open ? <StepList parts={parts} className="border-t p-3" /> : null}
+      {open ? <StepList parts={parts} className="border-t px-3.5 py-3" /> : null}
     </div>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GitBranch, Trash2, RotateCcw } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Trash2, RotateCcw } from "lucide-react";
+import { SectionHeading } from "@/components/page-header";
+import { Select } from "@/components/ui/select";
 import { MODELS, modelOptionLabel } from "@/lib/model-registry";
 import {
   type RoutingConfig,
@@ -20,6 +20,7 @@ import {
  */
 
 const modelLabel = (id: string) => MODELS.find((m) => m.id === id)?.label ?? id;
+const MODEL_OPTIONS = MODELS.map((m) => ({ value: m.id, label: modelOptionLabel(m) }));
 
 function genId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e5).toString(36)}`;
@@ -44,27 +45,28 @@ export function RoutingRules() {
 
   return (
     <section>
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          <GitBranch className="h-4 w-4" /> Model routing rules
-        </h3>
-        <button
-          type="button"
-          onClick={() => updateConfig(DEFAULT_CONFIG)}
-          className="inline-flex items-center gap-1 text-xs font-medium text-primary"
-        >
-          <RotateCcw className="h-3 w-3" /> Reset
-        </button>
-      </div>
-      <Card className="shadow-soft">
-        <CardContent className="flex flex-col gap-3">
-          <p className="text-xs text-muted-foreground">
-            The first rule with a keyword that appears in the query wins,
-            otherwise the fallback. This is the deterministic router the
-            assistant uses.
-          </p>
+      <SectionHeading
+        title="Model routing rules"
+        description="First matching keyword wins. Otherwise, the fallback."
+        actions={
+          <button
+            type="button"
+            onClick={() => updateConfig(DEFAULT_CONFIG)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> Reset
+          </button>
+        }
+      />
+      <div className="flex flex-col gap-3 rounded-lg bg-card p-6">
+          <div className="hidden grid-cols-[minmax(0,1fr)_14rem_8rem_2rem] gap-2 px-0.5 text-xs text-muted-foreground sm:grid">
+            <span>Keywords</span>
+            <span>Model</span>
+            <span>Reason</span>
+            <span />
+          </div>
           {config.rules.map((rule, i) => (
-            <div key={rule.id} className="flex flex-col gap-2 rounded-md border bg-background p-2 sm:flex-row sm:items-center">
+            <div key={rule.id} className="flex flex-col gap-2 sm:grid sm:grid-cols-[minmax(0,1fr)_14rem_8rem_2rem] sm:items-center">
               <input
                 aria-label={`Rule ${i + 1} keywords`}
                 value={rule.keywords.join(", ")}
@@ -77,23 +79,20 @@ export function RoutingRules() {
                   })
                 }
                 placeholder="keywords, comma separated"
-                className="min-h-9 flex-1 rounded-md border bg-card px-2 text-sm outline-none focus:border-primary"
+                className="min-h-10 rounded-md border bg-muted px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15"
               />
-              <select
+              <Select
                 aria-label={`Rule ${i + 1} model`}
                 value={rule.modelId}
-                onChange={(e) =>
+                onValueChange={(v) =>
                   updateConfig({
                     ...config,
-                    rules: config.rules.map((r, j) => (j === i ? { ...r, modelId: e.target.value } : r)),
+                    rules: config.rules.map((r, j) => (j === i ? { ...r, modelId: v } : r)),
                   })
                 }
-                className="min-h-9 rounded-md border bg-card px-2 text-sm outline-none focus:border-primary"
-              >
-                {MODELS.map((m) => (
-                  <option key={m.id} value={m.id}>{modelOptionLabel(m)}</option>
-                ))}
-              </select>
+                options={MODEL_OPTIONS}
+                className="w-full"
+              />
               <input
                 aria-label={`Rule ${i + 1} reason`}
                 value={rule.reason}
@@ -104,19 +103,19 @@ export function RoutingRules() {
                   })
                 }
                 placeholder="reason"
-                className="min-h-9 w-32 rounded-md border bg-card px-2 font-mono text-xs outline-none focus:border-primary"
+                className="min-h-10 rounded-md border bg-muted px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15 min-w-0 font-mono text-xs"
               />
               <button
                 type="button"
                 aria-label={`Remove rule ${i + 1}`}
                 onClick={() => updateConfig({ ...config, rules: config.rules.filter((_, j) => j !== i) })}
-                className="rounded-md px-2 text-muted-foreground hover:text-destructive"
+                className="flex h-9 w-9 items-center justify-center self-end rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-destructive sm:self-auto"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" strokeWidth={1.75} />
               </button>
             </div>
           ))}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="mt-1 flex flex-wrap items-center gap-2 border-t pt-4">
             <button
               type="button"
               onClick={() =>
@@ -125,41 +124,42 @@ export function RoutingRules() {
                   rules: [...config.rules, { id: genId("r"), keywords: [], modelId: MODELS[0].id, reason: "custom" }],
                 })
               }
-              className="text-sm font-medium text-primary"
+              className="rounded-full px-1 text-sm font-medium text-foreground hover:underline"
             >
               + Add rule
             </button>
             <span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
               Fallback
-              <select
+              <Select
                 aria-label="Fallback model"
                 value={config.fallbackModelId}
-                onChange={(e) => updateConfig({ ...config, fallbackModelId: e.target.value })}
-                className="min-h-8 rounded-md border bg-card px-2 text-sm outline-none focus:border-primary"
-              >
-                {MODELS.map((m) => (
-                  <option key={m.id} value={m.id}>{modelOptionLabel(m)}</option>
-                ))}
-              </select>
+                onValueChange={(v) => updateConfig({ ...config, fallbackModelId: v })}
+                options={MODEL_OPTIONS}
+                className="w-64"
+              />
             </span>
           </div>
 
-          {/* Live route preview (free) */}
-          <div className="mt-1 flex flex-col gap-2 rounded-md border border-dashed p-2 sm:flex-row sm:items-center">
-            <input
-              aria-label="Try a query"
-              value={testQuery}
-              onChange={(e) => setTestQuery(e.target.value)}
-              placeholder="Try a query to see where it routes"
-              className="min-h-9 flex-1 rounded-md border bg-card px-2 text-sm outline-none focus:border-primary"
-            />
-            <span data-testid="route-preview" className="text-sm">
-              routes to <b className="text-navy">{modelLabel(preview.modelId)}</b>{" "}
-              <Badge className="bg-accent font-mono text-accent-foreground hover:bg-accent">{preview.reason}</Badge>
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+      </div>
+
+      {/* Live route preview (free) */}
+      <div className="mt-3 flex flex-col gap-2 rounded-lg bg-card px-6 py-5 sm:flex-row sm:items-center sm:gap-4">
+        <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-xs text-muted-foreground">
+          Try a query
+          <input
+            value={testQuery}
+            onChange={(e) => setTestQuery(e.target.value)}
+            placeholder="Type a question"
+            className="min-h-10 rounded-md border bg-muted px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15"
+          />
+        </label>
+        <span data-testid="route-preview" className="text-sm sm:pt-5">
+          routes to <b className="font-medium text-foreground">{modelLabel(preview.modelId)}</b>{" "}
+          <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 font-mono text-xs text-muted-foreground">
+            {preview.reason}
+          </span>
+        </span>
+      </div>
     </section>
   );
 }

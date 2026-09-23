@@ -144,7 +144,7 @@ export function ResizeHandle({
         className,
       )}
     >
-      <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border transition-colors group-hover:bg-primary" />
+      <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border transition-colors group-hover:bg-foreground/40" />
     </div>
   );
 }

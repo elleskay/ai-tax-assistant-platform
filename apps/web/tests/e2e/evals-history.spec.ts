@@ -97,7 +97,8 @@ specTest(
         });
       });
 
-      await page.getByLabel("Grader").selectOption("judge");
+      await page.getByLabel("Grader").click();
+      await page.getByRole("option", { name: "LLM judge" }).click();
       await page.getByRole("button", { name: "Run" }).click();
       // The judge's verdict is shown on the failed case.
       await expect(

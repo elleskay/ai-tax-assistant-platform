@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/page-header";
 import type { AuditEntry } from "@/lib/governance";
 
 /*
@@ -32,13 +31,9 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
 
   if (entries.length === 0) {
     return (
-      <Card className="shadow-soft">
-        <CardContent className="p-0">
-          <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-            No activity yet. Use the assistant or run an eval, then refresh.
-          </p>
-        </CardContent>
-      </Card>
+      <EmptyState title="Nothing recorded yet">
+        Ask the assistant or run an eval, then refresh.
+      </EmptyState>
     );
   }
 
@@ -48,74 +43,73 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
   const rows = entries.slice(start, start + PAGE_SIZE);
 
   return (
-    <Card className="shadow-soft">
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="px-4 py-3 font-semibold">Time</th>
-                <th className="px-4 py-3 font-semibold">Workspace</th>
-                <th className="px-4 py-3 font-semibold">Event</th>
-                <th className="px-4 py-3 font-semibold">Detail</th>
-                <th className="px-4 py-3 font-semibold">Flag</th>
+    <div className="overflow-hidden rounded-lg bg-card">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b text-left text-xs text-muted-foreground">
+              <th scope="col" className="px-5 py-3 font-medium">Time</th>
+              <th scope="col" className="px-5 py-3 font-medium">Workspace</th>
+              <th scope="col" className="px-5 py-3 font-medium">Event</th>
+              <th scope="col" className="px-5 py-3 font-medium">Detail</th>
+              <th scope="col" className="px-5 py-3 font-medium">Flag</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((a, i) => (
+              <tr
+                key={start + i}
+                className="border-b transition-colors last:border-0 hover:bg-accent"
+              >
+                <td className="whitespace-nowrap px-5 py-3 tabular-nums text-muted-foreground">
+                  {formatTime(a.ts)}
+                </td>
+                <td className="whitespace-nowrap px-5 py-3 font-mono text-xs text-muted-foreground">
+                  {a.workspace ?? "n/a"}
+                </td>
+                <td className="px-5 py-3 text-foreground">{a.summary}</td>
+                <td className="px-5 py-3 text-muted-foreground">{a.detail}</td>
+                <td className="px-5 py-3">
+                  {a.flag ? (
+                    <span className="whitespace-nowrap rounded-full bg-warning px-2 py-0.5 text-[11px] font-medium text-warning-foreground">
+                      {a.flag}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground/60">none</span>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rows.map((a, i) => (
-                <tr key={start + i} className="border-b last:border-0">
-                  <td className="whitespace-nowrap px-4 py-2.5 tabular-nums text-muted-foreground">
-                    {formatTime(a.ts)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-muted-foreground">
-                    {a.workspace ?? "n/a"}
-                  </td>
-                  <td className="px-4 py-2.5 font-medium text-foreground">
-                    {a.summary}
-                  </td>
-                  <td className="px-4 py-2.5 text-muted-foreground">{a.detail}</td>
-                  <td className="px-4 py-2.5">
-                    {a.flag ? (
-                      <Badge className="bg-[var(--warning)] text-[var(--warning-foreground)] hover:bg-[var(--warning)]">
-                        {a.flag}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground">n/a</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex items-center justify-between gap-3 border-t px-4 py-3 text-sm text-muted-foreground">
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3 text-[13px] text-muted-foreground">
+        <span className="tabular-nums">
+          {start + 1}-{Math.min(start + PAGE_SIZE, entries.length)} of{" "}
+          {entries.length.toLocaleString()} events
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(current - 1)}
+            disabled={current === 0}
+          >
+            <ChevronLeft className="h-4 w-4" /> Prev
+          </Button>
           <span className="tabular-nums">
-            {start + 1}-{Math.min(start + PAGE_SIZE, entries.length)} of{" "}
-            {entries.length.toLocaleString()} events
+            Page {current + 1} / {pageCount}
           </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(current - 1)}
-              disabled={current === 0}
-            >
-              <ChevronLeft className="h-4 w-4" /> Prev
-            </Button>
-            <span className="tabular-nums">
-              Page {current + 1} / {pageCount}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(current + 1)}
-              disabled={current >= pageCount - 1}
-            >
-              Next <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(current + 1)}
+            disabled={current >= pageCount - 1}
+          >
+            Next <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -37,9 +37,11 @@ tool (Streamable HTTP, plus stdio via `npm run mcp:stdio`).
 
 ## Design system
 
-UI direction from `ui-ux-pro-max`: an accessible, high-contrast navy + blue
-palette with the Lexend + Source Sans 3 type pairing. Tokens live in
-`app/globals.css`.
+Modeled on x.ai: dark-first and near-monochrome, a #0a0a0a canvas with
+#1a1a1a cards, white pill buttons for the one primary action, Geist and Geist
+Mono, and short copy. Light mode is the same system inverted. Tokens live in
+`app/globals.css`; shared page furniture (header, section, notice, empty
+state) in `components/page-header.tsx`.
 
 ## Run locally
 

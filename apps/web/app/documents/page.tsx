@@ -7,12 +7,17 @@ import {
   Trash2,
   Upload,
   Loader2,
-  Info,
   Download,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  EmptyState,
+  Notice,
+  PAGE_CLASS,
+  PageHeader,
+  SectionHeading,
+} from "@/components/page-header";
 
 interface Doc {
   doc_id: string;
@@ -108,49 +113,21 @@ export default function DocumentsPage() {
   const usable = enabled && reachable;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 pb-16">
-      <div className="mb-6">
-        <h2 className="flex items-center gap-2 text-xl font-semibold text-navy">
-          <FileText className="h-5 w-5" /> Documents
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Upload this workspace&apos;s guidance documents. They are chunked,
-          embedded, and indexed for retrieval (RAG), and the assistant cites them
-          when it answers. Uploads go to the active workspace (top-right switcher).
-        </p>
-      </div>
-
-      {!enabled ? (
-        <Card className="mb-6 border-dashed">
-          <CardContent className="flex items-start gap-2 py-4 text-sm text-muted-foreground">
-            <Info className="mt-0.5 h-4 w-4 shrink-0" />
-            The RAG service is not configured (set RAG_SERVICE_URL). Uploads and
-            search are disabled here; the assistant falls back to its built-in
-            fact lookup.
-          </CardContent>
-        </Card>
-      ) : !reachable ? (
-        <Card className="mb-6 border-dashed border-[var(--warning)]">
-          <CardContent className="flex items-start gap-2 py-4 text-sm text-muted-foreground">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--warning-foreground)]" />
-            The RAG service is configured but not responding, so this workspace&apos;s
-            documents cannot be loaded right now. Start the service on
-            RAG_SERVICE_URL and refresh. Your indexed documents are not lost.
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <main id="main" className="flex flex-col gap-8">
-        <section className="flex flex-col gap-3">
-          <input
-            ref={fileRef}
-            type="file"
-            multiple
-            accept=".txt,.md,.markdown"
-            className="hidden"
-            onChange={(e) => onFiles(e.target.files)}
-          />
-          <div>
+    <main id="main" className={PAGE_CLASS}>
+      <PageHeader
+        eyebrow="Workspace"
+        title="Documents"
+        description="The guidance every answer is grounded in."
+        actions={
+          <>
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              accept=".txt,.md,.markdown"
+              className="hidden"
+              onChange={(e) => onFiles(e.target.files)}
+            />
             <Button
               onClick={() => fileRef.current?.click()}
               disabled={!usable || uploading}
@@ -160,108 +137,135 @@ export default function DocumentsPage() {
               ) : (
                 <Upload className="h-4 w-4" />
               )}
-              {uploading ? "Indexing..." : "Upload documents (.txt, .md)"}
+              {uploading ? "Indexing..." : "Upload .txt or .md"}
             </Button>
-          </div>
+          </>
+        }
+      />
 
-          {loading ? (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-            </p>
-          ) : docs.length === 0 ? (
-            usable ? (
-              <p className="text-sm text-muted-foreground">
-                No documents indexed for this workspace yet.
-              </p>
-            ) : null
+      {!enabled ? (
+        <Notice className="mt-10">
+          Retrieval is off. Set RAG_SERVICE_URL to enable uploads and search.
+        </Notice>
+      ) : !reachable ? (
+        <Notice tone="warning" className="mt-10">
+          Retrieval service not responding. Your documents are safe; start it and
+          refresh.
+        </Notice>
+      ) : null}
+
+      <section className="mt-12">
+        <SectionHeading title="Indexed" />
+        {loading ? (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+          </p>
+        ) : docs.length === 0 ? (
+          usable ? (
+            <EmptyState title="No documents yet">Upload guidance to ground answers.</EmptyState>
           ) : (
-            <ul className="flex flex-col gap-2">
-              {docs.map((d) => (
-                <li key={d.doc_id}>
-                  <Card className="shadow-soft">
-                    <CardContent className="flex items-center justify-between gap-3 py-3">
-                      <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-                        <FileText className="h-4 w-4 text-primary" /> {d.filename}
-                        <Badge className="bg-secondary text-secondary-foreground hover:bg-secondary">
-                          {d.chunk_count} chunks
-                        </Badge>
+            <EmptyState title="Unavailable">Retrieval is offline.</EmptyState>
+          )
+        ) : (
+          <div className="overflow-x-auto rounded-lg bg-card">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs text-muted-foreground">
+                  <th scope="col" className="px-5 py-3 font-medium">File</th>
+                  <th scope="col" className="px-5 py-3 text-right font-medium">Chunks</th>
+                  <th scope="col" className="w-24 px-5 py-3">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {docs.map((d) => (
+                  <tr key={d.doc_id} className="border-b last:border-0">
+                    <td className="px-5 py-2.5">
+                      <span className="flex items-center gap-2.5 text-foreground">
+                        <FileText
+                          aria-hidden
+                          className="h-4 w-4 shrink-0 text-muted-foreground"
+                          strokeWidth={1.75}
+                        />
+                        <span className="truncate">{d.filename}</span>
                       </span>
-                      <div className="flex shrink-0 items-center gap-1">
+                    </td>
+                    <td className="px-5 py-2.5 text-right font-mono text-[13px] tabular-nums text-muted-foreground">
+                      {d.chunk_count}
+                    </td>
+                    <td className="px-3 py-1.5">
+                      <div className="flex items-center justify-end gap-0.5">
                         <a
                           href={`/api/knowledge/download?doc_id=${encodeURIComponent(d.doc_id)}&filename=${encodeURIComponent(d.filename)}`}
                           download={d.filename}
                           aria-label={`Download ${d.filename}`}
-                          className="inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                          title="Download"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
-                          <Download className="h-4 w-4" />
+                          <Download className="h-4 w-4" strokeWidth={1.75} />
                         </a>
                         <Button
                           variant="ghost"
+                          size="icon-sm"
                           onClick={() => remove(d.doc_id)}
                           aria-label={`Remove ${d.filename}`}
+                          title="Remove"
+                          className="hover:text-destructive"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" strokeWidth={1.75} />
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="mt-14">
+        <SectionHeading title="Search" description="See what retrieval would hand the assistant." />
+        <form onSubmit={search} className="flex max-w-2xl gap-2">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search the indexed documents"
+            placeholder="Search the indexed documents"
+            className="rounded-full px-4"
+            disabled={!usable}
+          />
+          <Button type="submit" variant="secondary" className="h-10" disabled={!usable || searching}>
+            {searching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+            Search
+          </Button>
+        </form>
+        {results ? (
+          results.length === 0 ? (
+            <p className="mt-5 text-sm text-muted-foreground">No matches.</p>
+          ) : (
+            <ol className="mt-5 flex flex-col gap-2">
+              {results.map((c, i) => (
+                <li key={i} className="rounded-lg bg-card px-5 py-4">
+                  <div className="mb-1.5 flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
+                    <span>
+                      <span className="text-foreground">{c.source.filename}</span> &middot;{" "}
+                      {c.source.location}
+                    </span>
+                    <span className="font-mono tabular-nums">{c.score.toFixed(3)}</span>
+                  </div>
+                  <p className="max-w-3xl text-sm leading-relaxed text-foreground/85">{c.text}</p>
                 </li>
               ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="flex flex-col gap-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Knowledge search
-          </h3>
-          <form onSubmit={search} className="flex gap-2">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              aria-label="Search the indexed documents"
-              placeholder="Search the indexed documents..."
-              className="flex-1 rounded-md border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              disabled={!usable}
-            />
-            <Button type="submit" disabled={!usable || searching}>
-              {searching ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="h-4 w-4" />
-              )}
-              Search
-            </Button>
-          </form>
-          {results ? (
-            results.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No matching passages.
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {results.map((c, i) => (
-                  <li key={i}>
-                    <Card className="shadow-soft">
-                      <CardContent className="py-3">
-                        <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                          <span>
-                            {c.source.filename} &middot; {c.source.location}
-                          </span>
-                          <span className="tabular-nums">
-                            score {c.score.toFixed(3)}
-                          </span>
-                        </div>
-                        <p className="text-sm text-foreground">{c.text}</p>
-                      </CardContent>
-                    </Card>
-                  </li>
-                ))}
-              </ul>
-            )
-          ) : null}
-        </section>
-      </main>
-    </div>
+            </ol>
+          )
+        ) : null}
+      </section>
+    </main>
   );
 }

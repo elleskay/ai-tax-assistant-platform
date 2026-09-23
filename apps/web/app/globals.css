@@ -5,22 +5,24 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system: "precision console". shadcn/ui token structure carrying the
- * brand: near-black zinc neutrals, one refined blue accent, and a single
- * signature gradient (blue to cyan) reserved for the brand mark, the hero,
- * and primary CTAs. Depth comes from hairline borders plus soft layered
- * shadows, never heavy boxes. WCAG AA contrast in both themes.
- * Type: Space Grotesk (headings) + DM Sans (body), tabular numerals for data.
+ * Design system: dark-first and near-monochrome. A #0a0a0a canvas, #1a1a1a
+ * cards with no borders, white pill buttons for the one primary action, and
+ * translucent white for everything secondary. Large, light, tightly tracked
+ * headlines; short copy. One warm accent (--sunset) for "new" markers only.
+ * Type: Geist and Geist Mono. Light mode is the same system inverted.
  *
- * Historical token names (navy, gold, brand-from/to, shadow-soft/card/pop) are
- * kept so every page keeps working; only their values changed.
+ * Legacy token names (navy, gold, brand-from/to, shadow-soft/card/pop) are
+ * kept so older class names still resolve; their values follow this system.
  */
 @theme inline {
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-heading-src), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-heading: var(--heading);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -38,187 +40,171 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-sunset: var(--sunset);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
   --color-brand-from: var(--brand-from);
   --color-brand-to: var(--brand-to);
   --color-navy: var(--navy);
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
 
   --shadow-soft: var(--shadow-soft);
   --shadow-card: var(--shadow-card);
   --shadow-pop: var(--shadow-pop);
 
-  --animate-msg-in: msg-in 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-msg-in: msg-in 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-blur-in: blur-in 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-caret: caret-blink 1s steps(1) infinite;
+  --animate-ticker: ticker 16s linear infinite;
+  --animate-live: live-pulse 1.6s ease-in-out infinite;
 }
 
+/* Light: the same system inverted (ink on white). */
 :root {
-  /* Neutrals: cool zinc ramp. Accent: blue (oklch hue 255). The gradient
-     runs deep blue (brand-from) to cyan (brand-to). */
-  --radius: 0.625rem;
+  --radius: 16px;
   color-scheme: light;
 
-  --background: oklch(0.985 0.002 264);
-  --foreground: oklch(0.3 0.015 268);
-  --heading: oklch(0.21 0.02 268); /* used by h1-h6 */
-  --navy: oklch(0.21 0.02 268); /* legacy name: heading ink */
-  --gold: oklch(0.85 0.14 88); /* amber highlight (badges) */
-  --gold-foreground: oklch(0.32 0.06 75);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.3 0.015 268);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.3 0.015 268);
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --heading: #0a0a0a;
+  --navy: #0a0a0a;
+  --card: #f4f4f4;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --sidebar: #ffffff;
 
-  --primary: oklch(0.5 0.2 255); /* blue */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.94 0.026 255); /* blue tint: active pills */
-  --secondary-foreground: oklch(0.35 0.11 255);
-  --muted: oklch(0.955 0.005 264);
-  --muted-foreground: oklch(0.485 0.018 266); /* >= 4.5:1 on background */
-  --accent: oklch(0.95 0.018 255); /* hover tint / icon chips */
-  --accent-foreground: oklch(0.3 0.06 255);
+  --primary: #0a0a0a;
+  --primary-foreground: #ffffff;
+  --secondary: rgb(10 10 10 / 0.06);
+  --secondary-foreground: #0a0a0a;
+  --muted: rgb(10 10 10 / 0.035);
+  --muted-foreground: rgb(10 10 10 / 0.6);
+  --accent: rgb(10 10 10 / 0.05);
+  --accent-foreground: #0a0a0a;
 
-  --destructive: oklch(0.53 0.21 27);
-  --success: oklch(0.5 0.13 162);
-  --success-foreground: oklch(1 0 0);
-  --warning: oklch(0.955 0.05 92); /* pale amber surface */
-  --warning-foreground: oklch(0.42 0.09 78);
+  --destructive: #d92d20;
+  --success: #15803d;
+  --success-foreground: #ffffff;
+  --warning: rgb(217 119 6 / 0.1);
+  --warning-foreground: #9a4d05;
+  --sunset: #e85a06;
+  --gold: rgb(217 119 6 / 0.1);
+  --gold-foreground: #9a4d05;
 
-  --border: oklch(0.915 0.006 264);
-  --input: oklch(0.875 0.008 264);
-  --ring: oklch(0.5 0.2 255);
+  --border: rgb(10 10 10 / 0.08);
+  --input: rgb(10 10 10 / 0.16);
+  --ring: rgb(10 10 10 / 0.45);
 
-  /* Signature gradient (deep blue to cyan) */
-  --brand-from: oklch(0.48 0.2 258);
-  --brand-to: oklch(0.6 0.16 225);
+  --brand-from: #0a0a0a;
+  --brand-to: #0a0a0a;
 
-  /* Depth: hairline borders carry structure; shadows add lift. */
-  --shadow-soft:
-    0 1px 2px oklch(0.25 0.03 270 / 0.05),
-    0 2px 10px -2px oklch(0.25 0.03 270 / 0.07);
-  --shadow-card:
-    0 2px 4px oklch(0.25 0.03 270 / 0.05),
-    0 14px 34px -10px oklch(0.25 0.03 270 / 0.14);
-  --shadow-pop: 0 10px 30px -6px oklch(0.5 0.2 255 / 0.4);
+  /* Syntax and data colors (GitHub light), used in previews and code. */
+  --syn-fn: #8250df;
+  --syn-str: #0a3069;
+  --syn-num: #0550ae;
+  --syn-key: rgb(10 10 10 / 0.55);
+  --syn-ok: #1a7f37;
+  --syn-err: #cf222e;
+  --syn-prompt: #cf222e;
 
-  --sidebar: oklch(0.975 0.003 264);
-  --sidebar-foreground: oklch(0.3 0.015 268);
-  --sidebar-primary: oklch(0.5 0.2 255);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.95 0.018 255);
-  --sidebar-accent-foreground: oklch(0.3 0.06 255);
-  --sidebar-border: oklch(0.915 0.006 264);
-  --sidebar-ring: oklch(0.5 0.2 255);
+  --shadow-soft: 0 0 #0000;
+  --shadow-card: 0 1px 2px rgb(10 10 10 / 0.08);
+  --shadow-pop: 0 24px 60px -24px rgb(10 10 10 / 0.35), 0 0 0 1px rgb(10 10 10 / 0.06);
 }
 
+/* Dark (default): #0a0a0a canvas, #1a1a1a cards, white text. */
 .dark {
-  color-scheme: dark; /* native controls (select dropdown, scrollbars) go dark */
-  --background: oklch(0.144 0.006 270);
-  --foreground: oklch(0.92 0.004 264);
-  --heading: oklch(0.965 0.003 264);
-  --navy: oklch(0.965 0.003 264); /* titles read as near-white */
-  --card: oklch(0.185 0.007 270);
-  --card-foreground: oklch(0.92 0.004 264);
-  --popover: oklch(0.2 0.008 270);
-  --popover-foreground: oklch(0.92 0.004 264);
+  color-scheme: dark;
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+  --heading: #ffffff;
+  --navy: #ffffff;
+  --card: #1a1a1a;
+  --card-foreground: #ffffff;
+  --popover: #1a1a1a;
+  --popover-foreground: #ffffff;
+  --sidebar: #0a0a0a;
 
-  --primary: oklch(0.62 0.19 255); /* brighter blue for dark surfaces */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.28 0.05 255);
-  --secondary-foreground: oklch(0.9 0.03 255);
-  --muted: oklch(0.225 0.008 270);
-  --muted-foreground: oklch(0.72 0.012 266);
-  --accent: oklch(0.245 0.025 255);
-  --accent-foreground: oklch(0.9 0.02 255);
+  --primary: #ffffff;
+  --primary-foreground: #0a0a0a;
+  --secondary: rgb(255 255 255 / 0.1);
+  --secondary-foreground: #ffffff;
+  --muted: rgb(255 255 255 / 0.04);
+  --muted-foreground: rgb(255 255 255 / 0.6);
+  --accent: rgb(255 255 255 / 0.07);
+  --accent-foreground: #ffffff;
 
-  --destructive: oklch(0.66 0.2 25);
-  --success: oklch(0.72 0.16 162);
-  --success-foreground: oklch(0.16 0.03 165);
-  --warning: oklch(0.27 0.05 88);
-  --warning-foreground: oklch(0.85 0.12 90);
-  --gold: oklch(0.83 0.14 88);
-  --gold-foreground: oklch(0.2 0.04 80);
+  --destructive: #ff6b5e;
+  --success: #5ad68a;
+  --success-foreground: #0a0a0a;
+  --warning: rgb(245 185 74 / 0.12);
+  --warning-foreground: #f5b94a;
+  --sunset: #ff6308;
+  --gold: rgb(245 185 74 / 0.12);
+  --gold-foreground: #f5b94a;
 
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.62 0.19 255);
+  --border: rgb(255 255 255 / 0.08);
+  --input: rgb(255 255 255 / 0.14);
+  --ring: rgb(255 255 255 / 0.5);
 
-  --brand-from: oklch(0.55 0.19 258);
-  --brand-to: oklch(0.68 0.15 225);
+  --brand-from: #ffffff;
+  --brand-to: #ffffff;
 
-  /* Dark depth: shadows recede, borders and subtle inner light do the work. */
-  --shadow-soft:
-    0 1px 2px oklch(0 0 0 / 0.3),
-    0 2px 10px -2px oklch(0 0 0 / 0.3);
-  --shadow-card:
-    0 2px 4px oklch(0 0 0 / 0.3),
-    0 16px 40px -12px oklch(0 0 0 / 0.5);
-  --shadow-pop: 0 10px 30px -6px oklch(0.62 0.19 255 / 0.35);
+  /* Syntax and data colors (GitHub dark). */
+  --syn-fn: #d2a8ff;
+  --syn-str: #a5d6ff;
+  --syn-num: #79c0ff;
+  --syn-key: rgb(255 255 255 / 0.6);
+  --syn-ok: #7ee787;
+  --syn-err: #ffa198;
+  --syn-prompt: #ff7b72;
 
-  --sidebar: oklch(0.163 0.006 270);
-  --sidebar-foreground: oklch(0.92 0.004 264);
-  --sidebar-primary: oklch(0.62 0.19 255);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.245 0.025 255);
-  --sidebar-accent-foreground: oklch(0.9 0.02 255);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.62 0.19 255);
+  --shadow-soft: 0 0 #0000;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-pop: 0 24px 60px -24px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(255 255 255 / 0.08);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  /* Form fields get the stronger field border unless a utility says
+     otherwise; the hairline --border is for layout rules only. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea {
+    border-color: var(--input);
+  }
   body {
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
+    -moz-osx-font-smoothing: grayscale;
   }
   html {
     @apply font-sans;
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-heading);
-    letter-spacing: -0.02em;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     color: var(--heading);
+    font-weight: 500;
+    letter-spacing: -0.015em;
   }
-  h1 {
-    letter-spacing: -0.03em;
-  }
-}
-
-@layer utilities {
-  /* Signature gradient as text (decorative; the text itself stays selectable
-     and readable by assistive tech). */
-  .text-gradient {
-    background-image: linear-gradient(100deg, var(--brand-from), var(--brand-to));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  /* Faint blueprint grid for hero surfaces; fades out via mask. */
-  .bg-grid {
-    background-image:
-      linear-gradient(to right, var(--border) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--border) 1px, transparent 1px);
-    background-size: 44px 44px;
-    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 30%, transparent 75%);
-  }
-
-  /* Radial accent glow behind hero content. */
-  .hero-glow {
-    background:
-      radial-gradient(38rem 16rem at 50% 0%, oklch(from var(--brand-from) l c h / 0.16), transparent 70%),
-      radial-gradient(24rem 12rem at 68% 10%, oklch(from var(--brand-to) l c h / 0.1), transparent 70%);
+  ::selection {
+    background: oklch(from var(--foreground) l c h / 0.22);
   }
 }
 
@@ -230,41 +216,262 @@
 }
 
 @keyframes msg-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes typing-dot {
-  0%, 100% { opacity: 0.25; transform: translateY(0); }
-  50% { opacity: 1; transform: translateY(-2px); }
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ---------- Landing motion ---------- */
+
+/* Elements arrive out of focus and settle, like a message resolving. */
+@keyframes blur-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Vertical ticker: the list is rendered twice, so -50% loops seamlessly. */
+@keyframes ticker {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* A spectrum band sweeps along the hero word's underline after each change. */
+@keyframes hero-shimmer {
+  from {
+    background-position: 150% center;
+  }
+  to {
+    background-position: -150% center;
+  }
+}
+.hero-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    oklch(from var(--foreground) l c h / 0.22) 0%,
+    oklch(from var(--foreground) l c h / 0.22) 35%,
+    #6366f1 40%,
+    #a855f7 45%,
+    #ec4899 50%,
+    #f97316 55%,
+    #eab308 60%,
+    oklch(from var(--foreground) l c h / 0.22) 65%,
+    oklch(from var(--foreground) l c h / 0.22) 100%
+  );
+  background-size: 300% 100%;
+  background-position: -150% center;
+  animation: hero-shimmer 3s linear 0.35s both;
+}
+
+/* Indeterminate "searching" line. */
+@keyframes scan {
+  from {
+    background-position: -100% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+.scan-line {
+  background-image: linear-gradient(90deg, transparent, #6366f1, #ec4899, transparent);
+  background-size: 50% 100%;
+  background-repeat: no-repeat;
+  animation: scan 0.8s linear infinite;
+}
+
+/* Terminal "running" loader: a 2x3 grid of dots lighting in turn. */
+@keyframes dot-loader {
+  0% {
+    background-color: transparent;
+  }
+  14%,
+  50% {
+    background-color: currentColor;
+  }
+  64%,
+  100% {
+    background-color: transparent;
+  }
+}
+.dot-loader {
+  display: inline-grid;
+  grid-template-columns: repeat(2, 3px);
+  grid-template-rows: repeat(3, 3px);
+  gap: 1.5px;
+  vertical-align: middle;
+}
+.dot-loader > span {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  animation: dot-loader 0.66s linear infinite;
+}
+.dot-loader > span:nth-child(2) {
+  animation-delay: -0.55s;
+}
+.dot-loader > span:nth-child(3) {
+  animation-delay: -0.11s;
+}
+.dot-loader > span:nth-child(4) {
+  animation-delay: -0.44s;
+}
+.dot-loader > span:nth-child(5) {
+  animation-delay: -0.22s;
+}
+.dot-loader > span:nth-child(6) {
+  animation-delay: -0.33s;
+}
+
+/* Scroll reveal: children rise in one by one once the block is on screen.
+   Only hidden once JS has marked it pending, so no-JS still shows it. */
+[data-reveal="pending"] > * {
+  opacity: 0;
+}
+[data-reveal="in"] > * {
+  animation: blur-in 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
 }
 
 /* Inline citation refs ([n]) inside an answer, and the source they point to */
 .prose-chat a.cite-ref {
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 0.75em;
+  font-weight: 500;
+  color: var(--muted-foreground);
   text-decoration: none;
   white-space: nowrap;
+  vertical-align: 0.15em;
+  padding: 0 0.1em;
 }
-.prose-chat a.cite-ref:hover { text-decoration: underline; }
+.prose-chat a.cite-ref:hover {
+  color: var(--foreground);
+}
 @keyframes cite-flash {
-  0%, 25% { background-color: var(--accent); }
-  100% { background-color: transparent; }
+  0%,
+  25% {
+    background-color: oklch(from var(--foreground) l c h / 0.12);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
-.cite-flash { animation: cite-flash 1.6s ease-out; }
+.cite-flash {
+  animation: cite-flash 1.6s ease-out;
+}
 
 /* Markdown rendered inside assistant messages */
-.prose-chat > * + * { margin-top: 0.6rem; }
-.prose-chat h2 { font-size: 1rem; font-weight: 600; margin-top: 0.4rem; }
-.prose-chat h3 { font-size: 0.95rem; font-weight: 600; }
-.prose-chat ul { list-style: disc; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.3rem; }
-.prose-chat ol { list-style: decimal; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.3rem; }
-.prose-chat strong { font-weight: 600; }
-.prose-chat a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
-.prose-chat blockquote { border-left: 3px solid var(--border); padding-left: 0.75rem; color: var(--muted-foreground); }
-.prose-chat code { background: var(--muted); padding: 0.1rem 0.35rem; border-radius: 6px; font-size: 0.85em; }
+.prose-chat > * + * {
+  margin-top: 0.75rem;
+}
+.prose-chat h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+.prose-chat h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.prose-chat ul {
+  list-style: disc;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.prose-chat ol {
+  list-style: decimal;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.prose-chat li::marker {
+  color: var(--muted-foreground);
+}
+.prose-chat strong {
+  font-weight: 600;
+}
+.prose-chat a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--muted-foreground);
+}
+.prose-chat blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 0.75rem;
+  color: var(--muted-foreground);
+}
+.prose-chat code {
+  font-family: var(--font-mono);
+  background: var(--muted);
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.85em;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

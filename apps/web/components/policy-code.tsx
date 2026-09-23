@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { SectionHeading } from "@/components/page-header";
 import {
   DEFAULT_CONFIG,
   ROUTING_CONFIG_CHANGED,
@@ -41,15 +41,14 @@ export function PolicyCode({ policy }: { policy: GovernancePolicy }) {
   };
 
   return (
-    <Card className="shadow-soft">
-      <CardContent className="p-4">
-        <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-          Effective policy (as code)
-        </p>
-        <pre className="max-h-72 overflow-auto rounded-md bg-muted/60 p-3 text-xs leading-relaxed text-foreground">
-          {JSON.stringify(effective, null, 2)}
-        </pre>
-      </CardContent>
-    </Card>
+    <section>
+      <SectionHeading
+        title="Policy as code"
+        description="Saved guardrails plus this browser's routing."
+      />
+      <pre className="dark max-h-96 overflow-auto rounded-xl bg-background p-5 font-mono text-xs leading-relaxed text-foreground ring-1 ring-border">
+        {JSON.stringify(effective, null, 2)}
+      </pre>
+    </section>
   );
 }

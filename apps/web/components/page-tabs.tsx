@@ -12,7 +12,8 @@ export interface PageTab {
 /**
  * In-page tabs: a sticky bar of tab buttons over content panels. Inactive
  * panels stay mounted (hidden) so server-rendered tables and in-progress edits
- * survive switching. Styling matches the tools page tab bar. Content is passed
+ * survive switching. Styling matches the tools page tab bar (pill tabs that
+ * stick under the mobile top bar, or to the top on desktop). Content is passed
  * in as already-rendered nodes, so this works for both client and server pages.
  */
 export function PageTabs({
@@ -42,8 +43,8 @@ export function PageTabs({
 
   return (
     <>
-      <div className="sticky top-16 z-20 -mx-4 mt-6 border-b bg-background px-4 py-2">
-        <nav className="flex flex-wrap gap-1" aria-label={ariaLabel}>
+      <div className="sticky top-14 z-20 -mx-5 mt-8 bg-background/85 px-5 py-3 backdrop-blur-md md:top-0 md:-mx-10 md:px-10">
+        <nav className="inline-flex flex-wrap gap-1 rounded-full bg-card p-1" aria-label={ariaLabel}>
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -54,10 +55,10 @@ export function PageTabs({
               }}
               aria-current={active === t.id ? "page" : undefined}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
                 active === t.id
-                  ? "bg-secondary text-secondary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {t.label}

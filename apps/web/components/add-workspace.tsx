@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Plus, Loader2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 /**
  * Self-serve workspace onboarding (FR-1.1). Create a new tax-type workspace; it
@@ -45,18 +45,20 @@ export function AddWorkspace() {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary"
-      >
+      <Button variant="secondary" onClick={() => setOpen(true)} className="self-start">
         <Plus className="h-4 w-4" /> Add a workspace
-      </button>
+      </Button>
     );
   }
 
   return (
-    <Card className="mt-4 shadow-soft">
-      <CardContent className="flex flex-col gap-3 py-4">
+    <div className="flex flex-col gap-4 rounded-lg bg-card p-6">
+      <div>
+        <p className="text-xl tracking-tight">New workspace</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Inherits the platform policy. Starts empty.
+        </p>
+      </div>
         <form
           className="flex flex-col gap-3 sm:flex-row sm:items-end"
           onSubmit={(e) => {
@@ -64,16 +66,16 @@ export function AddWorkspace() {
             void create();
           }}
         >
-          <label className="flex flex-1 flex-col gap-1 text-sm">
+          <label className="flex max-w-sm flex-1 flex-col gap-1.5 text-sm">
             <span className="font-medium text-foreground">Name</span>
-            <input
+            <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. GST"
-              className="rounded-md border bg-card px-3 py-2 outline-none focus:ring-2 focus:ring-ring"
+              autoFocus
             />
           </label>
-          <Button type="submit" disabled={busy || !name.trim()}>
+          <Button type="submit" className="h-10" disabled={busy || !name.trim()}>
             {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -81,13 +83,23 @@ export function AddWorkspace() {
             )}
             Create
           </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-10"
+            onClick={() => {
+              setOpen(false);
+              setError(null);
+            }}
+          >
+            Cancel
+          </Button>
         </form>
         {error ? (
           <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
         ) : null}
-      </CardContent>
-    </Card>
+    </div>
   );
 }

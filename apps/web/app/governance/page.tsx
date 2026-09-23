@@ -1,5 +1,6 @@
-import { LayoutDashboard, Download } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Download } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { PAGE_CLASS, PageHeader } from "@/components/page-header";
 import {
   aggregateByModel,
   computeStats,
@@ -20,49 +21,60 @@ function Stat({
   tone,
   sub,
   href,
+  className,
 }: {
   label: string;
   value: string;
   tone?: "good" | "warn";
   sub?: string;
   href?: string;
+  className?: string;
 }) {
-  const card = (
-    <Card
-      className={`h-full shadow-soft ${href ? "transition-colors hover:border-primary/50" : ""}`}
-    >
-      <CardContent className="px-4 py-3">
-        <div
-          className={`text-2xl font-semibold tabular-nums ${
-            tone === "good" ? "text-emerald-600" : tone === "warn" ? "text-[var(--warning-foreground)]" : "text-navy"
-          }`}
-        >
-          {value}
-        </div>
-        <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
-        {sub ? <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div> : null}
-      </CardContent>
-    </Card>
+  const body = (
+    <>
+      <dt className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+        {label}
+        {tone ? (
+          <span
+            aria-hidden
+            className={cn(
+              "h-1.5 w-1.5 rounded-full",
+              tone === "good" ? "bg-success" : "bg-warning-foreground",
+            )}
+          />
+        ) : null}
+      </dt>
+      <dd
+        className={cn(
+          "mt-3 text-4xl font-medium leading-none tracking-tight tabular-nums",
+          tone === "warn" && "text-warning-foreground",
+        )}
+      >
+        {value}
+      </dd>
+      {sub ? <dd className="mt-3 text-xs text-muted-foreground">{sub}</dd> : null}
+    </>
   );
+  const cls = cn("block rounded-lg bg-card p-5", className);
   return href ? (
-    <a href={href} className="block">
-      {card}
+    <a href={href} className={cn(cls, "transition-colors hover:bg-card/70")}>
+      <dl>{body}</dl>
     </a>
   ) : (
-    card
+    <dl className={cls}>{body}</dl>
   );
 }
 
 function Sparkline({ values, threshold }: { values: number[]; threshold: number }) {
   if (values.length < 2) {
     return (
-      <p className="py-4 text-sm text-muted-foreground">
-        Not enough eval runs yet to show a trend.
+      <p className="py-10 text-center text-sm text-muted-foreground">
+        Two runs needed for a trend.
       </p>
     );
   }
   const w = 280;
-  const h = 60;
+  const h = 72;
   const pad = 6;
   const x = (i: number) => pad + (i / (values.length - 1)) * (w - 2 * pad);
   const y = (v: number) => pad + (1 - v / 100) * (h - 2 * pad);
@@ -72,7 +84,7 @@ function Sparkline({ values, threshold }: { values: number[]; threshold: number 
   return (
     <svg
       viewBox={`0 0 ${w} ${h}`}
-      className="w-full text-primary"
+      className="w-full text-foreground"
       role="img"
       aria-label="Eval pass-rate trend across recent runs"
     >
@@ -83,25 +95,21 @@ function Sparkline({ values, threshold }: { values: number[]; threshold: number 
         y2={y(threshold)}
         stroke="currentColor"
         strokeDasharray="3 3"
-        className="text-muted-foreground/40"
+        className="text-muted-foreground/60"
       />
       <polyline
         points={points}
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.75"
         strokeLinejoin="round"
         strokeLinecap="round"
       />
       {values.map((v, i) => (
-        <circle key={i} cx={x(i)} cy={y(v)} r="2.5" fill="currentColor" />
+        <circle key={i} cx={x(i)} cy={y(v)} r="2.25" fill="currentColor" />
       ))}
     </svg>
   );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-navy">{children}</h3>;
 }
 
 export default async function DashboardPage() {
@@ -140,114 +148,104 @@ export default async function DashboardPage() {
   const usd = (n: number) => (n > 0 && n < 0.01 ? "<$0.01" : `$${n.toFixed(2)}`);
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 pb-16">
-      <div className="mb-6">
-        <h2 className="flex items-center gap-2 text-xl font-semibold text-navy">
-          <LayoutDashboard className="h-5 w-5" /> AI Dashboard
-        </h2>
-        <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          Platform-wide health across all {workspaceCount} workspaces, usage,
-          evaluation quality, cost, and reliability under one uniform governance
-          standard. Flagged cards link to the detail.
-        </p>
-      </div>
-
-      <main id="main" className="flex flex-col gap-6">
-        <div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <Stat
-              label="Model calls"
-              value={stats.totalCalls.toLocaleString()}
-              sub={`across ${workspaceCount} workspaces`}
-            />
-            <Stat
-              label={`Eval gate (≥${g.evalGate.threshold}%)`}
-              value={stats.latestPassRate == null ? "n/a" : `${stats.latestPassRate}%`}
-              tone={stats.evalGatePass == null ? undefined : stats.evalGatePass ? "good" : "warn"}
-              sub={runs.length ? `latest of ${runs.length} runs` : "no runs yet"}
-              href="/evals"
-            />
-            <Stat
-              label="Over cost ceiling"
-              value={stats.overCeiling.toLocaleString()}
-              tone={stats.overCeiling ? "warn" : "good"}
-              sub={`${overCeilingRate.toFixed(1)}% of calls`}
-              href="/governance/audit"
-            />
-            <Stat
-              label="Fallbacks"
-              value={stats.fallbacks.toLocaleString()}
-              tone={stats.fallbacks ? "warn" : undefined}
-              sub={`${fallbackRate.toFixed(1)}% of calls`}
-              href="/governance/audit"
-            />
-            <Stat
-              label="Total cost"
-              value={usd(stats.totalCostUsd)}
-              sub={`across ${stats.totalCalls.toLocaleString()} calls`}
-            />
-          </div>
-          {fromTs ? (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Activity from {fmtDate(fromTs)} to {fmtDate(toTs)}, aggregated across
-              all workspaces.
-            </p>
-          ) : null}
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="shadow-soft">
-            <CardContent className="p-4">
-              <SectionTitle>Cost and volume by model</SectionTitle>
-              {byModel.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No model calls yet.</p>
-              ) : (
-                <ul className="flex flex-col gap-2.5">
-                  {byModel.map((m) => (
-                    <li key={m.model} className="flex flex-col gap-1">
-                      <div className="flex items-center justify-between gap-2 text-sm">
-                        <span className="font-medium text-foreground">{m.model}</span>
-                        <span className="tabular-nums text-muted-foreground">
-                          {m.calls.toLocaleString()} calls &middot; {usd(m.costUsd)}
-                        </span>
-                      </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{ width: `${(m.calls / maxModelCalls) * 100}%` }}
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-soft">
-            <CardContent className="p-4">
-              <SectionTitle>Eval pass-rate trend</SectionTitle>
-              <Sparkline values={trend} threshold={g.evalGate.threshold} />
-              <p className="mt-2 text-xs text-muted-foreground">
-                Dashed line is the {g.evalGate.threshold}% gate.{" "}
-                {stats.latestPassRate == null
-                  ? "No runs yet."
-                  : `Latest run ${stats.latestPassRate}%.`}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div>
+    <main id="main" className={PAGE_CLASS}>
+      <PageHeader
+        eyebrow="Platform"
+        title="AI Dashboard"
+        description={`Health across all ${workspaceCount} workspaces.`}
+        actions={
           <a
             href="/api/governance/report"
             download
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-secondary px-4 text-sm font-medium transition-colors hover:bg-secondary/70"
           >
-            <Download className="h-4 w-4" /> Download AI Risk Assessment (.md)
+            <Download className="h-4 w-4" /> Risk assessment (.md)
           </a>
+        }
+      />
+
+      <section className="mt-12">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <Stat
+            label="Model calls"
+            value={stats.totalCalls.toLocaleString()}
+            sub={`${workspaceCount} workspaces`}
+          />
+          <Stat
+            label={`Eval gate ≥${g.evalGate.threshold}%`}
+            value={stats.latestPassRate == null ? "n/a" : `${stats.latestPassRate}%`}
+            tone={stats.evalGatePass == null ? undefined : stats.evalGatePass ? "good" : "warn"}
+            sub={runs.length ? `latest of ${runs.length} runs` : "no runs yet"}
+            href="/evals"
+          />
+          <Stat
+            label="Over cost ceiling"
+            value={stats.overCeiling.toLocaleString()}
+            tone={stats.overCeiling ? "warn" : "good"}
+            sub={`${overCeilingRate.toFixed(1)}% of calls`}
+            href="/governance/audit"
+          />
+          <Stat
+            label="Fallbacks"
+            value={stats.fallbacks.toLocaleString()}
+            tone={stats.fallbacks ? "warn" : undefined}
+            sub={`${fallbackRate.toFixed(1)}% of calls`}
+            href="/governance/audit"
+          />
+          <Stat
+            label="Total cost"
+            value={usd(stats.totalCostUsd)}
+            sub={`${stats.totalCalls.toLocaleString()} calls`}
+            className="col-span-2 lg:col-span-1"
+          />
         </div>
-      </main>
-    </div>
+        {fromTs ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            {fmtDate(fromTs)} to {fmtDate(toTs)}
+          </p>
+        ) : null}
+      </section>
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        <section className="rounded-lg bg-card p-6">
+          <h2 className="text-base">By model</h2>
+          {byModel.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">No calls yet.</p>
+          ) : (
+            <ul className="mt-5 flex flex-col gap-4">
+              {byModel.map((m) => (
+                <li key={m.model} className="flex flex-col gap-2">
+                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                    <span>{m.model}</span>
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      {m.calls.toLocaleString()} calls &middot; {usd(m.costUsd)}
+                    </span>
+                  </div>
+                  <div className="h-1 overflow-hidden rounded-full bg-foreground/10">
+                    <div
+                      className="h-full rounded-full bg-foreground"
+                      style={{ width: `${(m.calls / maxModelCalls) * 100}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="rounded-lg bg-card p-6">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-base">Eval pass rate</h2>
+            <p className="text-xs text-muted-foreground">
+              Gate {g.evalGate.threshold}%
+              {stats.latestPassRate == null ? "" : ` · latest ${stats.latestPassRate}%`}
+            </p>
+          </div>
+          <div className="mt-5">
+            <Sparkline values={trend} threshold={g.evalGate.threshold} />
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }

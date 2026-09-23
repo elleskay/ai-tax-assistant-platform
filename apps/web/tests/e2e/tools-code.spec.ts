@@ -21,10 +21,12 @@ specTest(
 
     // Two number parameters: a and b.
     await page.getByLabel("Parameter 1 name").fill("a");
-    await page.getByLabel("Parameter 1 type").selectOption("number");
+    await page.getByLabel("Parameter 1 type").click();
+    await page.getByRole("option", { name: "number" }).click();
     await page.getByRole("button", { name: "+ Add parameter" }).click();
     await page.getByLabel("Parameter 2 name").fill("b");
-    await page.getByLabel("Parameter 2 type").selectOption("number");
+    await page.getByLabel("Parameter 2 type").click();
+    await page.getByRole("option", { name: "number" }).click();
 
     await page
       .getByLabel("Tool code")

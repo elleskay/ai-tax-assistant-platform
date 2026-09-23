@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Landmark, ArrowRight, Trash2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRight, Trash2 } from "lucide-react";
 import {
   readWorkspaceCookie,
   setWorkspaceCookie,
@@ -15,14 +14,17 @@ interface Ws {
 }
 
 /**
- * Platform-home / workspaces-page cards. Opening a workspace sets the active
+ * Workspaces-page list. Opening a workspace sets the active
  * cookie and navigates into the assistant. Custom workspaces can be deleted;
  * the seeded example workspaces (seed: true) cannot.
  */
 export function WorkspaceGrid() {
   const [list, setList] = useState<Ws[]>([]);
+  const [activeId, setActiveId] = useState("");
 
   useEffect(() => {
+    // Mirror the switcher: no cookie yet means the server default workspace.
+    setActiveId(readWorkspaceCookie() ?? "individual-income");
     fetch("/api/workspaces")
       .then((r) => r.json())
       .then((d: { workspaces?: Ws[] }) => setList(d.workspaces ?? []))
@@ -64,36 +66,45 @@ export function WorkspaceGrid() {
   if (list.length === 0) return null;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <ul className="grid gap-3 sm:grid-cols-2">
       {list.map((w) => (
-        <div key={w.id} className="relative">
-          <button onClick={() => open(w.id)} className="block w-full text-left">
-            <Card className="h-full shadow-soft transition-shadow hover:shadow-card">
-              <CardContent className="flex h-full flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent text-primary">
-                    <Landmark className="h-5 w-5" />
+        <li key={w.id} className="relative flex items-center overflow-hidden rounded-lg bg-card">
+          <button
+            onClick={() => open(w.id)}
+            className="group flex min-h-36 min-w-0 flex-1 flex-col justify-between gap-6 p-6 text-left transition-colors hover:bg-card/70"
+          >
+            <span className="min-w-0">
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="text-xl tracking-tight">{w.name}</span>
+                {w.id === activeId ? (
+                  <span className="rounded-full bg-sunset/10 px-2 py-0.5 text-[11px] font-medium text-sunset">
+                    Current
                   </span>
-                  <h4 className="text-base font-semibold text-navy">{w.name}</h4>
-                </div>
-                <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary">
-                  Open workspace <ArrowRight className="h-4 w-4" />
-                </span>
-              </CardContent>
-            </Card>
+                ) : null}
+              </span>
+              <span className="mt-1 block font-mono text-xs text-muted-foreground">
+                {w.id}
+                {w.seed ? " · example" : ""}
+              </span>
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-foreground">
+              Open
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </span>
           </button>
           {w.seed ? null : (
             <button
               type="button"
               onClick={() => remove(w.id, w.name)}
               aria-label={`Delete ${w.name} workspace`}
-              className="absolute right-2 top-2 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
+              title="Delete workspace"
+              className="absolute right-3 top-3 rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" strokeWidth={1.75} />
             </button>
           )}
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

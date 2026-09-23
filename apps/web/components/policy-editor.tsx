@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { SectionHeading } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -56,13 +56,12 @@ export function PolicyEditor({ policy }: { policy: GovernancePolicy }) {
   const labelCls = "flex flex-col gap-1.5 text-sm font-medium text-foreground";
 
   return (
-    <Card className="shadow-soft">
-      <CardContent className="flex flex-col gap-4 p-4">
-        <p className="text-sm text-muted-foreground">
-          The platform governance policy. Edits apply to every workspace and feed
-          the dashboard, the audit flags, and the downloaded report. The model
-          routing rules are managed below.
-        </p>
+    <section>
+      <SectionHeading
+        title="Guardrails"
+        description="Applies to every workspace."
+      />
+      <div className="flex flex-col gap-5 rounded-lg bg-card p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={labelCls}>
             Cost ceiling (USD per call)
@@ -75,7 +74,7 @@ export function PolicyEditor({ policy }: { policy: GovernancePolicy }) {
             />
           </label>
           <label className={labelCls}>
-            Eval gate threshold (% pass-rate)
+            Eval gate (% pass rate)
             <Input
               type="number"
               min="0"
@@ -86,7 +85,7 @@ export function PolicyEditor({ policy }: { policy: GovernancePolicy }) {
           </label>
         </div>
         <label className={labelCls}>
-          PII triggers (comma separated)
+          PII triggers
           <Input
             value={triggers}
             onChange={(e) => setTriggers(e.target.value)}
@@ -122,17 +121,17 @@ export function PolicyEditor({ policy }: { policy: GovernancePolicy }) {
             {state === "saving" ? "Saving..." : "Save policy"}
           </Button>
           {state === "saved" ? (
-            <span className="text-sm text-emerald-600">
-              Saved. Applied platform-wide.
+            <span role="status" className="text-sm text-success">
+              Saved.
             </span>
           ) : null}
           {state === "error" ? (
-            <span className="text-sm text-red-600">
-              Could not save. Try again.
+            <span role="alert" className="text-sm text-destructive">
+              Couldn&apos;t save. Try again.
             </span>
           ) : null}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

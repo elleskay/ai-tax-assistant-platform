@@ -1,5 +1,5 @@
-import { ScrollText } from "lucide-react";
 import { AuditTable } from "@/components/audit-table";
+import { PAGE_CLASS, PageHeader } from "@/components/page-header";
 import {
   buildAuditTrail,
   getEffectivePolicy,
@@ -22,20 +22,15 @@ export default async function AuditPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 pb-16">
-      <div className="mb-6">
-        <h2 className="flex items-center gap-2 text-xl font-semibold text-navy">
-          <ScrollText className="h-5 w-5" /> AI Audit Trail
-        </h2>
-        <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          An automated record of every model call, eval run, and instruction
-          change across all workspaces, newest first.
-        </p>
-      </div>
-
-      <main id="main">
+    <main id="main" className={PAGE_CLASS}>
+      <PageHeader
+        eyebrow="Platform"
+        title="AI Audit Trail"
+        description="Every call, run, and change. Newest first."
+      />
+      <div className="mt-12">
         <AuditTable entries={audit} />
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

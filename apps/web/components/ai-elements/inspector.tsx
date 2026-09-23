@@ -30,23 +30,21 @@ function PanelSection({
 }) {
   return (
     <section className={cn("flex min-h-0 flex-1 flex-col", className)}>
-      <div className="flex shrink-0 items-center gap-2 px-4 py-2.5 text-sm font-semibold text-navy">
-        <span className="text-muted-foreground">{icon}</span>
+      <h2 className="flex shrink-0 items-center gap-2 px-5 pb-2 pt-3 text-xs font-medium text-muted-foreground">
+        {icon}
         {title}
         {count > 0 ? (
-          <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 text-xs font-semibold text-secondary-foreground">
-            {count}
-          </span>
+          <span className="ml-auto font-mono text-[11px] tabular-nums">{count}</span>
         ) : null}
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">{children}</div>
+      </h2>
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">{children}</div>
     </section>
   );
 }
 
 function PanelEmpty({ children }: { children: ReactNode }) {
   return (
-    <p className="px-1 py-2 text-xs leading-relaxed text-muted-foreground">
+    <p className="py-1 text-xs leading-relaxed text-muted-foreground">
       {children}
     </p>
   );
@@ -58,33 +56,30 @@ export function Inspector({ message }: { message: UIMessage | null }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <div className="flex h-16 shrink-0 items-center px-5">
+        <p className="text-sm font-medium">Details</p>
+      </div>
       <PanelSection
         title="Agent steps"
-        icon={<ListOrderedIcon className="size-4" />}
+        icon={<ListOrderedIcon className="size-3.5" />}
         count={toolParts.length}
       >
         {toolParts.length ? (
           <StepList parts={toolParts} />
         ) : (
-          <PanelEmpty>
-            The agent&apos;s tool calls for the answer you&apos;re viewing appear
-            here. Scroll the chat or click an answer to switch.
-          </PanelEmpty>
+          <PanelEmpty>Tool calls for the selected answer.</PanelEmpty>
         )}
       </PanelSection>
       <PanelSection
         title="Sources"
-        icon={<BookOpenIcon className="size-4" />}
+        icon={<BookOpenIcon className="size-3.5" />}
         count={sources.length}
         className="border-t"
       >
         {sources.length && message ? (
           <SourceList sources={sources} messageId={message.id} />
         ) : (
-          <PanelEmpty>
-            Document passages the answer cites appear here. Click a source to
-            expand it, or a [n] in the answer to jump to it.
-          </PanelEmpty>
+          <PanelEmpty>Passages the selected answer cites.</PanelEmpty>
         )}
       </PanelSection>
     </div>

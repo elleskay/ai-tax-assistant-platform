@@ -26,38 +26,65 @@ import { cn } from "@/lib/utils";
 import { WorkspaceSwitcher } from "./workspace-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
-const GROUPS = [
+type NavLink = { href: string; label: string; icon: typeof Home };
+
+// Two scopes: the selected department's workspace, then the platform-wide
+// governance layer over every workspace.
+const GROUPS: { label: string; workspace?: boolean; links: NavLink[] }[] = [
   {
     label: "Workspace",
+    workspace: true,
     links: [
-      { href: "/documents", label: "Documents", icon: Files },
       { href: "/assistant", label: "Assistant", icon: MessageSquare },
-    ],
-  },
-  {
-    label: "Workspace AI settings",
-    links: [
+      { href: "/documents", label: "Documents", icon: Files },
       { href: "/tools", label: "AI Tools", icon: Wrench },
       { href: "/prompts", label: "AI Instructions", icon: FileText },
-    ],
-  },
-  {
-    label: "Workspace Insights",
-    links: [
       { href: "/insights", label: "Usage analytics", icon: Lightbulb },
       { href: "/gateway", label: "AI Gateway", icon: ArrowRightLeft },
     ],
   },
   {
-    label: "Platform-wide Governance",
+    label: "Platform",
     links: [
       { href: "/governance", label: "AI Dashboard", icon: LayoutDashboard },
       { href: "/governance/policy", label: "AI Policy", icon: Scale },
       { href: "/governance/audit", label: "AI Audit Trail", icon: ScrollText },
       { href: "/evals", label: "AI Evaluation", icon: BarChart3 },
+      { href: "/workspaces", label: "Workspaces", icon: Boxes },
     ],
   },
 ];
+
+/** The platform mark: a section sign, as in a cited clause of guidance. */
+export function Mark({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-foreground text-[15px] font-semibold leading-none text-background",
+        className,
+      )}
+    >
+      §
+    </span>
+  );
+}
+
+function Wordmark({ collapsed = false }: { collapsed?: boolean }) {
+  return (
+    <Link href="/" className="flex min-w-0 items-center gap-2.5">
+      <Mark />
+      <span
+        className={cn(
+          "min-w-0 truncate text-[15px] font-medium tracking-tight text-foreground transition-[opacity,width] duration-200 ease-out",
+          collapsed ? "w-0 opacity-0" : "opacity-100",
+        )}
+      >
+        Tax Assistant
+      </span>
+    </Link>
+  );
+}
 
 function NavLinks({
   onNavigate,
@@ -84,10 +111,10 @@ function NavLinks({
 
   const itemClass = (active: boolean) =>
     cn(
-      "flex h-9 items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-2.5 text-sm font-medium transition-colors duration-150",
+      "flex h-8 items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-md px-2.5 text-[13.5px] transition-colors duration-150",
       active
-        ? "bg-secondary text-secondary-foreground shadow-[inset_3px_0_0_0_var(--primary)]"
-        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+        ? "bg-secondary text-foreground"
+        : "text-muted-foreground hover:bg-accent hover:text-foreground",
     );
 
   // Labels stay in the DOM when the rail collapses (so accessible names and
@@ -98,71 +125,53 @@ function NavLinks({
     collapsed ? "w-0 opacity-0" : "opacity-100",
   );
 
-  const renderLink = ({
-    href,
-    label,
-    icon: Icon,
-  }: {
-    href: string;
-    label: string;
-    icon: typeof Home;
-  }) => (
-    <Link
-      key={href}
-      href={href}
-      onClick={() => {
-        onNavigate?.();
-        // Clicking Assistant always opens a fresh chat, not the last one.
-        // Already on the page: tell it to start a new chat now (no remount).
-        // Arriving from elsewhere: flag it so the page loads a fresh chat.
-        if (href === "/assistant") {
-          if (window.location.pathname === "/assistant") {
-            window.dispatchEvent(new Event("iras:new-chat"));
-          } else {
-            try {
-              sessionStorage.setItem("iras-new-chat", "1");
-            } catch {
-              // ignore (private mode, etc.)
+  const renderLink = ({ href, label, icon: Icon }: NavLink) => {
+    const active = isActive(href);
+    return (
+      <Link
+        key={href}
+        href={href}
+        onClick={() => {
+          onNavigate?.();
+          // Clicking Assistant always opens a fresh chat, not the last one.
+          // Already on the page: tell it to start a new chat now (no remount).
+          // Arriving from elsewhere: flag it so the page loads a fresh chat.
+          if (href === "/assistant") {
+            if (window.location.pathname === "/assistant") {
+              window.dispatchEvent(new Event("iras:new-chat"));
+            } else {
+              try {
+                sessionStorage.setItem("iras-new-chat", "1");
+              } catch {
+                // ignore (private mode, etc.)
+              }
             }
           }
-        }
-      }}
-      title={collapsed ? label : undefined}
-      aria-current={isActive(href) ? "page" : undefined}
-      className={itemClass(isActive(href))}
-    >
-      <Icon className="h-4 w-4 shrink-0" />
-      <span className={labelClass}>{label}</span>
-    </Link>
-  );
+        }}
+        title={collapsed ? label : undefined}
+        aria-current={active ? "page" : undefined}
+        className={itemClass(active)}
+      >
+        <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+        <span className={labelClass}>{label}</span>
+      </Link>
+    );
+  };
 
   return (
-    <div className="flex flex-col gap-6 px-7 py-5">
-      {/* Landing page */}
-      <nav className="flex flex-col gap-0.5">
-        <Link
-          href="/"
-          onClick={onNavigate}
-          title={collapsed ? "Landing page" : undefined}
-          aria-current={pathname === "/" ? "page" : undefined}
-          className={itemClass(pathname === "/")}
-        >
-          <Home className="h-4 w-4 shrink-0" />
-          <span className={labelClass}>Landing page</span>
-        </Link>
-        {renderLink({ href: "/workspaces", label: "Workspaces", icon: Boxes })}
+    <div className="flex flex-col gap-6 px-3 py-4">
+      <nav aria-label="Overview" className="flex flex-col">
+        {renderLink({ href: "/", label: "Overview", icon: Home })}
       </nav>
 
-      {/* Each group is divided off by its caption (a rule when collapsed). The
-          Workspace group leads with the workspace selector, below its caption. */}
       {GROUPS.map((group) => (
-        <nav key={group.label} className="flex flex-col gap-0.5">
-          {/* One fixed-height row: the caption text and the divider rule
-              crossfade as the rail collapses, so nothing pops. */}
+        <nav key={group.label} aria-label={group.label} className="flex flex-col gap-0.5">
+          {/* One fixed-height row: the caption and the divider rule crossfade
+              as the rail collapses, so nothing pops. */}
           <p className="flex h-6 items-center overflow-hidden whitespace-nowrap px-2.5">
             <span
               className={cn(
-                "min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80 transition-[opacity,width] duration-200 ease-out",
+                "min-w-0 truncate text-xs font-medium text-muted-foreground transition-[opacity,width] duration-200 ease-out",
                 collapsed ? "w-0 opacity-0" : "opacity-100",
               )}
             >
@@ -176,19 +185,19 @@ function NavLinks({
               )}
             />
           </p>
-          {group.label === "Workspace" ? (
+          {group.workspace ? (
             collapsed ? (
               <Link
                 href="/workspaces"
                 onClick={onNavigate}
                 title="Switch workspace"
                 aria-label="Switch workspace"
-                className="flex h-9 items-center rounded-md border bg-card px-2.5 text-navy transition-colors hover:bg-accent"
+                className="mb-1.5 flex h-8 items-center rounded-md bg-secondary px-2.5 text-foreground transition-colors hover:bg-secondary/70"
               >
-                <Building2 className="h-4 w-4 shrink-0" />
+                <Building2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
               </Link>
             ) : (
-              <div className="mb-1">
+              <div className="mb-1.5">
                 <WorkspaceSwitcher />
               </div>
             )
@@ -201,9 +210,9 @@ function NavLinks({
 }
 
 /**
- * Console-style app shell: a thin top bar (logo + theme toggle) over a left
- * sidebar (workspace selector + grouped nav) and the scrolling content area.
- * The sidebar collapses to an icon rail via the button pinned at its bottom.
+ * App shell: a full-height left sidebar (mark, workspace selector, and the
+ * two nav scopes) beside the scrolling content. The sidebar collapses to an
+ * icon rail from its footer. Below md it becomes a top bar and a drawer.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false); // mobile drawer
@@ -244,95 +253,85 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      {/* Top bar: glassy, floats over the content scroll */}
-      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border/70 bg-background/75 px-7 backdrop-blur-xl">
+    <div className="flex min-h-dvh flex-col md:flex-row">
+      {/* Mobile top bar */}
+      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md md:hidden">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent md:hidden"
+          className="-ml-1 rounded-full p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
           aria-label="Toggle navigation"
           aria-expanded={open}
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
-        <Link href="/" className="flex items-center gap-2.5">
-          <span
-            aria-hidden
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-from to-brand-to text-white shadow-soft ring-1 ring-white/20 ring-inset"
-          >
-            <Building2 className="h-4 w-4" />
-          </span>
-          <span
-            className="text-sm font-semibold tracking-tight text-navy"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            AI Tax Assistant Platform
-          </span>
-        </Link>
-        <div className="ml-auto flex items-center gap-3">
-          <div className="hidden w-48 md:block lg:w-56">
-            <WorkspaceSwitcher />
-          </div>
+        <Wordmark />
+        <div className="ml-auto">
           <ThemeToggle />
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        {/* Desktop sidebar */}
-        <aside
+      {/* Desktop sidebar */}
+      <aside
+        className={cn(
+          "sticky top-0 hidden h-dvh shrink-0 flex-col overflow-x-hidden border-r bg-sidebar md:flex",
+          mounted && "transition-[width] duration-200 ease-out",
+          collapsed ? "w-[64px]" : "w-60",
+        )}
+      >
+        <div className="flex h-16 shrink-0 items-center px-[18px]">
+          <Wordmark collapsed={collapsed} />
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <NavLinks collapsed={collapsed} />
+        </div>
+        <div
           className={cn(
-            "sticky top-16 hidden h-[calc(100dvh-4rem)] shrink-0 self-start overflow-x-hidden border-r border-border/70 bg-[var(--sidebar)] md:flex md:flex-col",
-            mounted && "transition-[width] duration-200 ease-out",
-            collapsed ? "w-24" : "w-64",
+            "flex shrink-0 items-center gap-1 px-3 py-3",
+            collapsed && "flex-col",
           )}
         >
-          <div className="flex-1 overflow-y-auto">
-            <NavLinks collapsed={collapsed} />
-          </div>
-          <div className="border-t border-border/70 px-7 py-2">
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              aria-label={collapsed ? "Expand menu" : "Collapse menu"}
-              className="flex h-9 w-full items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              {collapsed ? (
-                <PanelLeftOpen className="h-4 w-4 shrink-0" />
-              ) : (
-                <PanelLeftClose className="h-4 w-4 shrink-0" />
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? "Expand menu" : "Collapse menu"}
+            title={collapsed ? "Expand menu" : "Collapse menu"}
+            className="flex h-8 min-w-0 flex-1 items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-md px-2.5 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+            ) : (
+              <PanelLeftClose className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+            )}
+            <span
+              className={cn(
+                "min-w-0 truncate transition-[opacity,width] duration-200 ease-out",
+                collapsed ? "w-0 opacity-0" : "opacity-100",
               )}
-              <span
-                className={cn(
-                  "min-w-0 truncate transition-[opacity,width] duration-200 ease-out",
-                  collapsed ? "w-0 opacity-0" : "opacity-100",
-                )}
-              >
-                Collapse menu
-              </span>
-            </button>
-          </div>
-        </aside>
+            >
+              Collapse
+            </span>
+          </button>
+          <ThemeToggle />
+        </div>
+      </aside>
 
-        {/* Mobile drawer (always full) */}
-        {open ? (
-          <>
-            <div
-              aria-hidden="true"
-              className="fixed inset-0 top-16 z-30 bg-black/45 backdrop-blur-sm md:hidden"
-              onClick={() => setOpen(false)}
-            />
-            <aside className="fixed bottom-0 left-0 top-16 z-40 w-72 overflow-y-auto border-r bg-[var(--sidebar)] md:hidden">
-              <NavLinks onNavigate={() => setOpen(false)} />
-            </aside>
-          </>
-        ) : null}
+      {/* Mobile drawer (always full) */}
+      {open ? (
+        <>
+          <div
+            aria-hidden="true"
+            className="fixed inset-0 top-14 z-30 bg-black/60 backdrop-blur-sm md:hidden"
+            onClick={() => setOpen(false)}
+          />
+          <aside className="fixed bottom-0 left-0 top-14 z-40 w-72 overflow-y-auto border-r bg-sidebar md:hidden">
+            <NavLinks onNavigate={() => setOpen(false)} />
+          </aside>
+        </>
+      ) : null}
 
-        {/* Content */}
-        <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
-          {children}
-        </main>
-      </div>
+      {/* Content. Each page renders its own <main id="main">. */}
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">{children}</div>
     </div>
   );
 }

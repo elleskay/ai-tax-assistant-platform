@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Wrench, Plus, Trash2, Play, Sparkles } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Plus, Trash2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { EmptyState, PAGE_CLASS, PageHeader } from "@/components/page-header";
 import {
   Dialog,
   DialogContent,
@@ -65,21 +66,18 @@ export default function ToolsPage() {
   const atLimit = tools.length >= MAX_CUSTOM_TOOLS;
 
   return (
-    <main id="main" className="mx-auto w-full max-w-7xl px-4 py-8 pb-16">
-      <h2 className="flex items-center gap-2 text-xl font-semibold text-navy">
-        <Wrench className="h-5 w-5" /> AI Tools
-      </h2>
-      <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-        Build tools without code: start from a template or create your own (lookup
-        table, message template, or sandboxed calculator). Anything you add is
-        available to the assistant straight away, with guardrails applied.
-      </p>
+    <main id="main" className={PAGE_CLASS}>
+      <PageHeader
+        eyebrow="Workspace"
+        title="AI Tools"
+        description="Tools the assistant can call. No code needed."
+      />
 
       {/* Tabs keep each section focused; "New tool" sits in the bar so it is
           reachable from either tab. */}
-      <div className="sticky top-16 z-20 -mx-4 mt-6 border-b bg-background px-4 py-2">
+      <div className="sticky top-14 z-20 -mx-5 mt-10 bg-background/85 px-5 py-3 backdrop-blur-md md:top-0 md:-mx-10 md:px-10">
         <div className="flex items-center justify-between gap-2">
-          <nav className="flex flex-wrap gap-1" aria-label="Tool sections">
+          <nav className="inline-flex gap-1 rounded-full bg-card p-1" aria-label="Tool sections">
             {SECTIONS.map((s) => (
               <button
                 key={s.id}
@@ -87,13 +85,18 @@ export default function ToolsPage() {
                 onClick={() => setTab(s.id)}
                 aria-current={tab === s.id ? "page" : undefined}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
                   tab === s.id
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {s.label}
+                {s.id === "custom" ? (
+                  <span className="ml-1.5 font-mono text-xs font-normal text-muted-foreground">
+                    {tools.length}
+                  </span>
+                ) : null}
               </button>
             ))}
           </nav>
@@ -139,8 +142,7 @@ export default function ToolsPage() {
           <DialogHeader>
             <DialogTitle>{editing ? "Edit tool" : "New tool"}</DialogTitle>
             <DialogDescription>
-              Build a lookup table, a message template, or a sandboxed
-              calculator. It stays in your browser and the assistant can call it.
+              Saved in this browser. The assistant can call it.
             </DialogDescription>
           </DialogHeader>
           <ToolBuilder
@@ -157,7 +159,7 @@ export default function ToolsPage() {
 function Result({ value, testid }: { value: string | null; testid: string }) {
   if (value === null) return null;
   return (
-    <pre data-testid={testid} className="whitespace-pre-wrap rounded-md border bg-secondary/40 p-3 text-sm text-foreground">
+    <pre data-testid={testid} className="whitespace-pre-wrap rounded-md bg-muted px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground">
       {value}
     </pre>
   );
@@ -175,22 +177,16 @@ function CustomTools({
   onDelete: (id: string) => void;
 }) {
   return (
-    <section className="mt-10">
-      <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        <Sparkles className="h-4 w-4" /> Your tools
-      </h3>
+    <section className="mt-6">
+      <p className="mb-5 text-sm text-muted-foreground">
+        Saved in this browser. Test them here.
+      </p>
 
       <div className="flex flex-col gap-4">
         {tools.length === 0 ? (
-          <Card className="border-dashed shadow-none">
-            <CardContent className="flex flex-col items-center gap-1 py-10 text-center">
-              <Sparkles className="h-7 w-7 text-muted-foreground" />
-              <p className="text-sm font-medium text-foreground">No custom tools yet</p>
-              <p className="max-w-xs text-sm text-muted-foreground">
-                Add one from the Templates tab, or click New tool to build your own. It stays in your browser and the assistant can call it.
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState title="No custom tools yet">
+            Add a template, or build one with New tool.
+          </EmptyState>
         ) : null}
         {tools.map((t) => (
           <CustomToolCard key={t.id} tool={t} onEdit={() => onEdit(t)} onDelete={() => onDelete(t.id)} />
@@ -229,40 +225,46 @@ function CustomToolCard({ tool, onEdit, onDelete }: { tool: CustomTool; onEdit: 
   const sig = `(${params.map((p) => `${p.name}: ${p.type}`).join(", ")})`;
 
   return (
-    <Card className="shadow-soft" data-testid="custom-tool" data-name={tool.name}>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
-              <Sparkles className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="font-mono text-sm font-semibold text-navy">{tool.name}</p>
-              <p className="font-mono text-xs text-muted-foreground">{sig}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{tool.description}</p>
-            </div>
-          </div>
-          <div className="flex shrink-0 gap-1">
-            <button type="button" onClick={onEdit} className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent">Edit</button>
-            <button type="button" aria-label={`Delete ${tool.name}`} onClick={onDelete} className="rounded-md px-2 py-1 text-muted-foreground hover:bg-accent hover:text-destructive">
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
+    <article className="overflow-hidden rounded-lg bg-card" data-testid="custom-tool" data-name={tool.name}>
+      <header className="flex items-start justify-between gap-3 border-b px-5 py-4">
+        <div className="min-w-0">
+          <p className="break-all font-mono text-sm">
+            <span className="font-medium text-heading">{tool.name}</span>
+            <span className="text-muted-foreground">{sig}</span>
+          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{tool.description}</p>
         </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <span className="mr-1 hidden rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground sm:inline">
+            {KIND_LABEL[tool.kind]}
+          </span>
+          <button type="button" onClick={onEdit} className="rounded-full px-3 py-1 text-[13px] font-medium text-foreground transition-colors hover:bg-accent">Edit</button>
+          <button type="button" aria-label={`Delete ${tool.name}`} onClick={onDelete} className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive">
+            <Trash2 className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+        </div>
+      </header>
+      <div className="flex flex-col gap-3 px-5 py-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
           {params.map((p) => (
             <div key={p.name} className="flex-1">
-              <label className="mb-1 block text-xs text-muted-foreground" htmlFor={`${tool.id}-${p.name}`}>{p.name}</label>
-              <input id={`${tool.id}-${p.name}`} inputMode={p.type === "number" ? "numeric" : "text"} value={input[p.name] ?? ""} onChange={(e) => setInput({ ...input, [p.name]: e.target.value })} placeholder={p.description || p.name} className="min-h-10 w-full rounded-md border bg-card px-3 text-sm outline-none focus:border-primary" />
+              <label className="mb-1 block font-mono text-xs text-muted-foreground" htmlFor={`${tool.id}-${p.name}`}>{p.name}</label>
+              <input id={`${tool.id}-${p.name}`} inputMode={p.type === "number" ? "numeric" : "text"} value={input[p.name] ?? ""} onChange={(e) => setInput({ ...input, [p.name]: e.target.value })} placeholder={p.description || p.name} className="min-h-10 w-full rounded-md border bg-muted px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15" />
             </div>
           ))}
-          <Button onClick={run} disabled={running}><Play className="h-4 w-4" /> {running ? "Running..." : "Run"}</Button>
+          <Button variant="secondary" className="h-10" onClick={run} disabled={running}><Play className="h-4 w-4" /> {running ? "Running..." : "Run"}</Button>
         </div>
         <Result value={result} testid="custom-tool-result" />
-      </CardContent>
-    </Card>
+      </div>
+    </article>
   );
 }
+
+const KIND_LABEL: Record<CustomTool["kind"], string> = {
+  lookup: "Lookup table",
+  template: "Response template",
+  code: "Sandboxed code",
+};
 
 function genId() {
   return `t_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -307,32 +309,32 @@ function ToolBuilder({ initial, onSave, onCancel }: { initial: CustomTool | null
 
   return (
     <div className="flex flex-col gap-5">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-fit flex-wrap gap-1 rounded-full bg-muted p-1">
           {(["lookup", "template", "code"] as const).map((k) => (
-            <button key={k} type="button" onClick={() => setKind(k)} aria-pressed={kind === k} className={`rounded-md border px-3 py-1.5 text-sm font-medium ${kind === k ? "border-primary bg-accent text-accent-foreground" : "text-muted-foreground"}`}>
+            <button key={k} type="button" onClick={() => setKind(k)} aria-pressed={kind === k} className={cn("rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors", kind === k ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground")}>
               {k === "lookup" ? "Lookup table" : k === "template" ? "Response template" : "Code (sandboxed)"}
             </button>
           ))}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Tool name (snake_case)">
-            <input aria-label="Tool name" value={name} onChange={(e) => setName(e.target.value)} placeholder="my_tool" className="min-h-10 w-full rounded-md border bg-card px-3 font-mono text-sm outline-none focus:border-primary" />
+            <input aria-label="Tool name" value={name} onChange={(e) => setName(e.target.value)} placeholder="my_tool" className="min-h-10 w-full rounded-md border bg-muted px-3 font-mono text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15" />
           </Field>
           <Field label="Description">
-            <input aria-label="Tool description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this tool does" className="min-h-10 w-full rounded-md border bg-card px-3 text-sm outline-none focus:border-primary" />
+            <input aria-label="Tool description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this tool does" className="min-h-10 w-full rounded-md border bg-muted px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15" />
           </Field>
         </div>
         {kind === "lookup" ? (
           <>
             <Field label="Input parameter name">
-              <input aria-label="Parameter name" value={paramName} onChange={(e) => setParamName(e.target.value)} placeholder="query" className="min-h-10 w-full rounded-md border bg-card px-3 font-mono text-sm outline-none focus:border-primary sm:w-48" />
+              <input aria-label="Parameter name" value={paramName} onChange={(e) => setParamName(e.target.value)} placeholder="query" className="min-h-10 w-full rounded-md border bg-muted px-3 font-mono text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15 sm:w-48" />
             </Field>
             <Field label="Keyword to answer pairs">
               <div className="flex flex-col gap-2">
                 {pairs.map((p, i) => (
                   <div key={i} className="flex gap-2">
-                    <input aria-label={`Keyword ${i + 1}`} value={p.key} onChange={(e) => setPairs(pairs.map((x, j) => (j === i ? { ...x, key: e.target.value } : x)))} placeholder="keyword" className="min-h-10 w-1/3 rounded-md border bg-card px-3 text-sm outline-none focus:border-primary" />
-                    <input aria-label={`Answer ${i + 1}`} value={p.value} onChange={(e) => setPairs(pairs.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))} placeholder="answer returned for this keyword" className="min-h-10 flex-1 rounded-md border bg-card px-3 text-sm outline-none focus:border-primary" />
+                    <input aria-label={`Keyword ${i + 1}`} value={p.key} onChange={(e) => setPairs(pairs.map((x, j) => (j === i ? { ...x, key: e.target.value } : x)))} placeholder="keyword" className="min-h-10 w-1/3 rounded-md border bg-muted px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15" />
+                    <input aria-label={`Answer ${i + 1}`} value={p.value} onChange={(e) => setPairs(pairs.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))} placeholder="answer returned for this keyword" className="min-h-10 flex-1 rounded-md border bg-muted px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15" />
                     {pairs.length > 1 ? (
                       <button type="button" aria-label={`Remove pair ${i + 1}`} onClick={() => setPairs(pairs.filter((_, j) => j !== i))} className="rounded-md px-2 text-muted-foreground hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
@@ -344,7 +346,7 @@ function ToolBuilder({ initial, onSave, onCancel }: { initial: CustomTool | null
               </div>
             </Field>
             <Field label="Fallback answer (optional)">
-              <input aria-label="Fallback answer" value={fallback} onChange={(e) => setFallback(e.target.value)} placeholder="Shown when nothing matches" className="min-h-10 w-full rounded-md border bg-card px-3 text-sm outline-none focus:border-primary" />
+              <input aria-label="Fallback answer" value={fallback} onChange={(e) => setFallback(e.target.value)} placeholder="Shown when nothing matches" className="min-h-10 w-full rounded-md border bg-muted px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15" />
             </Field>
           </>
         ) : (
@@ -353,11 +355,17 @@ function ToolBuilder({ initial, onSave, onCancel }: { initial: CustomTool | null
               <div className="flex flex-col gap-2">
                 {params.map((p, i) => (
                   <div key={i} className="flex gap-2">
-                    <input aria-label={`Parameter ${i + 1} name`} value={p.name} onChange={(e) => setParams(params.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} placeholder="param_name" className="min-h-10 flex-1 rounded-md border bg-card px-3 font-mono text-sm outline-none focus:border-primary" />
-                    <select aria-label={`Parameter ${i + 1} type`} value={p.type} onChange={(e) => setParams(params.map((x, j) => (j === i ? { ...x, type: e.target.value as "string" | "number" } : x)))} className="min-h-10 rounded-md border bg-card px-2 text-sm outline-none focus:border-primary">
-                      <option value="string">string</option>
-                      <option value="number">number</option>
-                    </select>
+                    <input aria-label={`Parameter ${i + 1} name`} value={p.name} onChange={(e) => setParams(params.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} placeholder="param_name" className="min-h-10 flex-1 rounded-md border bg-muted px-3 font-mono text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15" />
+                    <Select
+                      aria-label={`Parameter ${i + 1} type`}
+                      value={p.type}
+                      onValueChange={(v) => setParams(params.map((x, j) => (j === i ? { ...x, type: v as "string" | "number" } : x)))}
+                      options={[
+                        { value: "string", label: "string" },
+                        { value: "number", label: "number" },
+                      ]}
+                      className="w-28 font-mono"
+                    />
                     {params.length > 1 ? (
                       <button type="button" aria-label={`Remove parameter ${i + 1}`} onClick={() => setParams(params.filter((_, j) => j !== i))} className="rounded-md px-2 text-muted-foreground hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
@@ -370,16 +378,16 @@ function ToolBuilder({ initial, onSave, onCancel }: { initial: CustomTool | null
             </Field>
             {kind === "template" ? (
               <Field label="Response template (use {param} placeholders)">
-                <textarea aria-label="Response template" value={template} onChange={(e) => setTemplate(e.target.value)} placeholder="Hello {name}, your reference is {ref}." rows={3} className="w-full rounded-md border bg-card px-3 py-2 text-sm outline-none focus:border-primary" />
+                <textarea aria-label="Response template" value={template} onChange={(e) => setTemplate(e.target.value)} placeholder="Hello {name}, your reference is {ref}." rows={3} className="w-full rounded-md border bg-muted px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15" />
               </Field>
             ) : (
               <>
                 <Field label="JavaScript (must define run(input))">
-                  <textarea aria-label="Tool code" value={code} onChange={(e) => setCode(e.target.value)} rows={8} spellCheck={false} className="w-full rounded-md border bg-card px-3 py-2 font-mono text-xs outline-none focus:border-primary" />
+                  <textarea aria-label="Tool code" value={code} onChange={(e) => setCode(e.target.value)} rows={8} spellCheck={false} className="w-full rounded-md border bg-muted px-3 py-2 font-mono text-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/15" />
                 </Field>
                 <p className="text-xs text-muted-foreground">
-                  Runs server-side in a QuickJS WASM sandbox: 1 second deadline, 32MB
-                  memory cap, no network, filesystem, or host access.
+                  Runs server-side in a QuickJS sandbox: 1s, 32MB, no network or
+                  host access.
                 </p>
               </>
             )}

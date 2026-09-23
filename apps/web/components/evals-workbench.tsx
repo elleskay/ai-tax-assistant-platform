@@ -1,19 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  FlaskConical,
-  History,
-  Play,
-  Trash2,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-} from "lucide-react";
+import { Play, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
+import { EmptyState, SectionHeading } from "@/components/page-header";
 import { MODELS } from "@/lib/model-registry";
 import {
   type RoutingConfig,
@@ -200,32 +192,50 @@ export function EvalsWorkbench() {
     perModel.set(r.modelLabel, m);
   }
 
+  const field =
+    "min-h-10 w-full min-w-0 rounded-md border bg-muted px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/15";
+
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-12">
       {/* Test cases */}
       <section>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            <FlaskConical className="h-4 w-4" /> Test cases
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            Each case is routed by your{" "}
-            <Link href="/governance/policy" className="font-medium text-primary underline underline-offset-2">
-              routing rules
-            </Link>
-            , then answered by the chosen model and graded.
-          </p>
-        </div>
-        <Card className="shadow-soft">
-          <CardContent className="flex flex-col gap-3">
+        <SectionHeading
+          title="Test cases"
+          description={
+            <>
+              Routed by your{" "}
+              <Link
+                href="/governance/policy"
+                className="text-foreground underline underline-offset-4"
+              >
+                routing rules
+              </Link>
+              , then graded.
+            </>
+          }
+        />
+        <div className="overflow-hidden rounded-lg bg-card">
+          <div className="hidden grid-cols-[1.5rem_minmax(0,1.4fr)_minmax(0,1fr)_2.25rem] gap-2 px-6 pb-1 pt-5 text-xs text-muted-foreground sm:grid">
+            <span>#</span>
+            <span>Question</span>
+            <span>Must contain</span>
+            <span />
+          </div>
+          <div className="flex flex-col gap-2 px-6 py-3">
             {cases.map((c, i) => (
-              <div key={c.id} className="flex flex-col gap-2 rounded-md border bg-background p-2 sm:flex-row">
+              <div
+                key={c.id}
+                className="flex flex-col gap-2 sm:grid sm:grid-cols-[1.5rem_minmax(0,1.4fr)_minmax(0,1fr)_2.25rem] sm:items-center"
+              >
+                <span className="hidden font-mono text-xs tabular-nums text-muted-foreground sm:block">
+                  {i + 1}
+                </span>
                 <input
                   aria-label={`Case ${i + 1} query`}
                   value={c.query}
                   onChange={(e) => updateCases(cases.map((x, j) => (j === i ? { ...x, query: e.target.value } : x)))}
                   placeholder="question"
-                  className="min-h-9 flex-1 rounded-md border bg-card px-2 text-sm outline-none focus:border-primary"
+                  className={field}
                 />
                 <input
                   aria-label={`Case ${i + 1} expected keywords`}
@@ -234,74 +244,70 @@ export function EvalsWorkbench() {
                     updateCases(cases.map((x, j) => (j === i ? { ...x, expects: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) } : x)))
                   }
                   placeholder="must contain (comma separated)"
-                  className="min-h-9 flex-1 rounded-md border bg-card px-2 text-sm outline-none focus:border-primary"
+                  className={field}
                 />
                 <button
                   type="button"
                   aria-label={`Remove case ${i + 1}`}
                   onClick={() => updateCases(cases.filter((_, j) => j !== i))}
-                  className="rounded-md px-2 text-muted-foreground hover:text-destructive"
+                  className="flex h-9 w-9 items-center justify-center self-end rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-destructive sm:self-auto"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" strokeWidth={1.75} />
                 </button>
               </div>
             ))}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              {cases.length < 8 ? (
-                <button
-                  type="button"
-                  onClick={() => updateCases([...cases, { id: genId("c"), query: "", expects: [] }])}
-                  className="text-sm font-medium text-primary"
-                >
-                  + Add case
-                </button>
-              ) : <span />}
-              <span className="flex flex-wrap items-center gap-2">
-                <select
-                  aria-label="Grader"
-                  value={grader}
-                  onChange={(e) => setGrader(e.target.value as Grader)}
-                  className="min-h-9 rounded-md border bg-card px-2 text-sm outline-none focus:border-primary"
-                >
-                  <option value="keyword">Keyword grader</option>
-                  <option value="judge">LLM judge</option>
-                </select>
-                {promptVersions.length > 0 ? (
-                  <select
-                    aria-label="Prompt version"
-                    value={promptVersion}
-                    onChange={(e) => setPromptVersion(e.target.value)}
-                    className="min-h-9 rounded-md border bg-card px-2 text-sm outline-none focus:border-primary"
-                  >
-                    <option value="">Active prompt</option>
-                    {promptVersions.map((v) => (
-                      <option key={v} value={v}>Prompt v{v}</option>
-                    ))}
-                  </select>
-                ) : null}
-                <Button onClick={run} disabled={running || cases.length === 0}>
-                  {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                  {running ? "Running..." : "Run"}
-                </Button>
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t px-6 py-4">
+            {cases.length < 8 ? (
+              <button
+                type="button"
+                onClick={() => updateCases([...cases, { id: genId("c"), query: "", expects: [] }])}
+                className="rounded-full px-1 text-sm font-medium text-foreground hover:underline"
+              >
+                + Add case
+              </button>
+            ) : <span />}
+            <span className="flex flex-wrap items-center gap-2">
+              <Select
+                aria-label="Grader"
+                value={grader}
+                onValueChange={(v) => setGrader(v as Grader)}
+                options={[
+                  { value: "keyword", label: "Keyword grader" },
+                  { value: "judge", label: "LLM judge" },
+                ]}
+                className="h-9 w-40 rounded-full"
+              />
+              {promptVersions.length > 0 ? (
+                // "active" stands in for the empty value (no pinned version),
+                // which a Radix item cannot hold.
+                <Select
+                  aria-label="Prompt version"
+                  value={promptVersion || "active"}
+                  onValueChange={(v) => setPromptVersion(v === "active" ? "" : v)}
+                  options={[
+                    { value: "active", label: "Active prompt" },
+                    ...promptVersions.map((v) => ({ value: String(v), label: `Prompt v${v}` })),
+                  ]}
+                  className="h-9 w-40 rounded-full"
+                />
+              ) : null}
+              <Button onClick={run} disabled={running || cases.length === 0}>
+                {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                {running ? "Running..." : "Run"}
+              </Button>
+            </span>
+          </div>
+        </div>
       </section>
 
-      {/* Stats (populated on run) */}
+      {/* Results (populated on run) */}
       <section>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Results
-        </h3>
+        <SectionHeading title="Results" />
         {!results ? (
-          <Card className="border-dashed shadow-none">
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              Edit the cases above, then click Run to see the results.
-            </CardContent>
-          </Card>
+          <EmptyState title="No results yet">Run the cases to grade them.</EmptyState>
         ) : (
-          <div className="flex flex-col gap-4" data-testid="eval-stats">
+          <div className="flex flex-col gap-6" data-testid="eval-stats">
             <div className="grid grid-cols-3 gap-3">
               <Stat label="Pass rate" value={`${rate}%`} accent />
               <Stat label="Passed" value={`${passed}/${total}`} />
@@ -309,68 +315,64 @@ export function EvalsWorkbench() {
             </div>
 
             {perModel.size > 0 ? (
-              <Card className="shadow-soft">
-                <CardContent className="flex flex-col gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    By model
-                  </p>
+              <div>
+                <p className="mb-2 text-sm text-muted-foreground">By model</p>
+                <ul className="flex flex-col overflow-hidden rounded-lg bg-card">
                   {[...perModel.entries()].map(([label, s]) => (
-                    <div key={label} className="flex items-center justify-between text-sm">
+                    <li key={label} className="flex items-center justify-between border-b px-5 py-3 text-sm last:border-0">
                       <span className="text-foreground">{label}</span>
-                      <span className="tabular-nums text-muted-foreground">{s.pass}/{s.total} passed</span>
-                    </div>
+                      <span className="font-mono text-xs tabular-nums text-muted-foreground">{s.pass}/{s.total} passed</span>
+                    </li>
                   ))}
-                </CardContent>
-              </Card>
+                </ul>
+              </div>
             ) : null}
 
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col overflow-hidden rounded-lg bg-card">
               {results.map((r) => (
-                <li key={r.id}>
-                  <Card className="shadow-soft">
-                    <CardContent className="flex flex-col gap-1 py-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-                          {r.pass ? (
-                            <CheckCircle2 className="h-4 w-4 text-[var(--success)]" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-destructive" />
-                          )}
-                          {r.query}
-                        </span>
-                        <Badge className="bg-secondary text-secondary-foreground hover:bg-secondary">
-                          {r.modelLabel}
-                        </Badge>
-                      </div>
-                      {r.error ? (
-                        <p className="pl-6 text-xs text-destructive">{r.error}</p>
-                      ) : (
-                        <>
-                          {r.checks.length > 0 ? (
-                            <p className="pl-6 text-xs text-muted-foreground">
-                              {r.checks.map((c) => `${c.pass ? "ok" : "miss"}: ${c.keyword}`).join("  |  ")}
-                            </p>
-                          ) : null}
-                          {r.rationale ? (
-                            <p className={`pl-6 text-xs ${r.pass ? "text-muted-foreground" : "text-destructive"}`}>
-                              {typeof r.score === "number" ? `Judge score ${r.score}: ` : ""}
-                              {r.rationale}
-                            </p>
-                          ) : null}
-                          {r.answer ? (
-                            <details className="pl-6 text-xs">
-                              <summary className="cursor-pointer text-primary">
-                                Show response
-                              </summary>
-                              <pre className="mt-1 whitespace-pre-wrap rounded-md border bg-secondary/40 p-2 text-foreground">
-                                {r.answer}
-                              </pre>
-                            </details>
-                          ) : null}
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
+                <li key={r.id} className="flex gap-3 border-b px-5 py-4 last:border-0">
+                  <span
+                    className={
+                      r.pass
+                        ? "mt-0.5 h-fit shrink-0 rounded-full bg-success/15 px-2 py-0.5 font-mono text-[11px] font-medium text-success"
+                        : "mt-0.5 h-fit shrink-0 rounded-full bg-destructive/15 px-2 py-0.5 font-mono text-[11px] font-medium text-destructive"
+                    }
+                  >
+                    {r.pass ? "PASS" : "FAIL"}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                      <span className="text-sm font-medium text-foreground">{r.query}</span>
+                      <span className="font-mono text-xs text-muted-foreground">{r.modelLabel}</span>
+                    </div>
+                    {r.error ? (
+                      <p className="text-xs text-destructive">{r.error}</p>
+                    ) : (
+                      <>
+                        {r.checks.length > 0 ? (
+                          <p className="font-mono text-xs text-muted-foreground">
+                            {r.checks.map((c) => `${c.pass ? "ok" : "miss"}: ${c.keyword}`).join("  |  ")}
+                          </p>
+                        ) : null}
+                        {r.rationale ? (
+                          <p className={`text-xs ${r.pass ? "text-muted-foreground" : "text-destructive"}`}>
+                            {typeof r.score === "number" ? `Judge score ${r.score}: ` : ""}
+                            {r.rationale}
+                          </p>
+                        ) : null}
+                        {r.answer ? (
+                          <details className="text-xs">
+                            <summary className="w-fit cursor-pointer text-muted-foreground hover:text-foreground">
+                              Show response
+                            </summary>
+                            <pre className="mt-2 whitespace-pre-wrap rounded-md bg-muted p-3 font-sans text-[13px] leading-relaxed text-foreground">
+                              {r.answer}
+                            </pre>
+                          </details>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -380,63 +382,55 @@ export function EvalsWorkbench() {
 
       {/* Run history (persisted server-side) */}
       <section>
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          <History className="h-4 w-4" /> Run history
-        </h3>
+        <SectionHeading title="Run history" />
         {history.length === 0 ? (
-          <Card className="border-dashed shadow-none">
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              No runs yet. Completed runs are saved here, with a pass-rate trend
-              over time.
-            </CardContent>
-          </Card>
+          <EmptyState title="No runs yet">Each run is saved here.</EmptyState>
         ) : (
-          <Card className="shadow-soft" data-testid="run-history">
-            <CardContent className="flex flex-col gap-4">
-              {/* Oldest to newest, left to right */}
-              <div className="flex h-16 items-end gap-1">
-                {[...history].reverse().map((r) => (
-                  <div
-                    key={r.id}
-                    data-testid="run-bar"
-                    title={`${r.passRate}%`}
-                    style={{ height: `${Math.max(8, r.passRate)}%` }}
-                    className="w-3 rounded-sm bg-primary/70"
-                  />
-                ))}
-              </div>
-              <ul className="flex flex-col gap-2">
-                {history.map((r) => (
-                  <li
-                    key={r.id}
-                    data-testid="run-entry"
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-background px-3 py-2 text-sm"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="text-muted-foreground">
-                        {new Date(r.timestamp).toLocaleString("en-SG", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                          timeZone: "Asia/Singapore",
-                        })}
-                      </span>
-                      <Badge className="bg-secondary font-mono text-secondary-foreground hover:bg-secondary">
-                        {r.grader}
-                      </Badge>
-                      {r.promptVersion !== undefined ? (
-                        <Badge className="bg-accent font-mono text-accent-foreground hover:bg-accent">
-                          Prompt v{r.promptVersion}
-                        </Badge>
-                      ) : null}
-                    </span>
+          <div className="overflow-hidden rounded-lg bg-card" data-testid="run-history">
+            {/* Oldest to newest, left to right */}
+            <div className="flex h-24 items-end gap-1.5 border-b px-6 pb-4 pt-5">
+              {[...history].reverse().map((r) => (
+                <div
+                  key={r.id}
+                  data-testid="run-bar"
+                  title={`${r.passRate}%`}
+                  style={{ height: `${Math.max(8, r.passRate)}%` }}
+                  className="w-3 rounded-t-[3px] bg-foreground/80"
+                />
+              ))}
+            </div>
+            <ul className="flex flex-col">
+              {history.map((r) => (
+                <li
+                  key={r.id}
+                  data-testid="run-entry"
+                  className="flex flex-wrap items-center justify-between gap-2 border-b px-6 py-3 text-sm last:border-0"
+                >
+                  <span className="flex items-center gap-2.5">
                     <span className="tabular-nums text-muted-foreground">
-                      {r.passed}/{r.total} <b className="text-navy">{r.passRate}%</b>
+                      {new Date(r.timestamp).toLocaleString("en-SG", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                        timeZone: "Asia/Singapore",
+                      })}
                     </span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+                    <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+                      {r.grader}
+                    </span>
+                    {r.promptVersion !== undefined ? (
+                      <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+                        Prompt v{r.promptVersion}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                    {r.passed}/{r.total}{" "}
+                    <b className="ml-1 text-sm font-medium text-foreground">{r.passRate}%</b>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </section>
     </div>
@@ -445,11 +439,13 @@ export function EvalsWorkbench() {
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <Card className="shadow-soft">
-      <CardContent className="py-4">
-        <p className={`text-2xl font-semibold tabular-nums ${accent ? "text-primary" : "text-navy"}`}>{value}</p>
-        <p className="text-xs text-muted-foreground">{label}</p>
-      </CardContent>
-    </Card>
+    <div className="rounded-lg bg-card p-5">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p
+        className={`mt-3 text-4xl font-medium leading-none tracking-tight tabular-nums ${accent ? "text-foreground" : "text-foreground/85"}`}
+      >
+        {value}
+      </p>
+    </div>
   );
 }
