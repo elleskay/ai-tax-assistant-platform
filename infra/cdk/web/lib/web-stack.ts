@@ -2,11 +2,26 @@ import * as path from "path";
 import * as cdk from "aws-cdk-lib";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
-import { NextjsServerless } from "./constructs/NextjsServerless";
+import { NextjsServerless, type CustomDomainProps } from "./constructs/NextjsServerless";
 
 // Default to the conventional `apps/web` location. Override via PLATFORM_DEMO_APP_PATH
 // so platform CI can point at `apps/_demo` for self-test without rewriting this file.
 const APP_REL = process.env.PLATFORM_DEMO_APP_PATH ?? "apps/web";
+
+// Optional custom domain, read at synth from CUSTOM_DOMAIN_NAME and
+// CERTIFICATE_ARN (an ACM certificate in us-east-1). The deploy workflow passes
+// both from GitHub Actions secrets, so the domain is neither committed nor
+// printed in public workflow logs. Both or neither: half a configuration would
+// deploy without the alias and take the custom domain offline.
+function customDomain(): CustomDomainProps | undefined {
+  const domainName = process.env.CUSTOM_DOMAIN_NAME;
+  const certificateArn = process.env.CERTIFICATE_ARN;
+  if (!domainName && !certificateArn) return undefined;
+  if (!domainName || !certificateArn) {
+    throw new Error("Set both CUSTOM_DOMAIN_NAME and CERTIFICATE_ARN, or neither.");
+  }
+  return { domainName, certificateArn };
+}
 
 export class WebStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -55,16 +70,9 @@ export class WebStack extends cdk.Stack {
       // Raises both the Lambda timeout and the CloudFront origin read timeout
       // (docs/DEPLOY.md #14). Matches the route's maxDuration = 60.
       serverTimeoutSeconds: 60,
-      // Custom domain on the CloudFront distribution. DNS lives on Vercel
-      // (soonkeong.dev), so no hostedZoneId here: a CNAME record points
-      // ai-tax.soonkeong.dev at the distribution. The cert ARN is not a secret,
-      // but it is account-specific, so allow an env override for forks.
-      customDomain: {
-        domainName: process.env.CUSTOM_DOMAIN_NAME ?? "ai-tax.soonkeong.dev",
-        certificateArn:
-          process.env.CERTIFICATE_ARN ??
-          "arn:aws:acm:us-east-1:281639842383:certificate/45a2e0d5-b434-4f9c-a978-60ff3d4d3ac6",
-      },
+      // DNS is managed outside Route 53, so no hostedZoneId: a CNAME record
+      // points the domain at the distribution.
+      customDomain: customDomain(),
     });
 
     // Let the server Lambda read and write escalations.
