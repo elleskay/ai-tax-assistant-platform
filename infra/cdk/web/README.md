@@ -14,8 +14,8 @@ self-test.
   the app's JSON store (workspaces, prompts, gateway logs, eval runs,
   governance). The store bucket is `RETAIN`: it is the app's entire
   persistence layer.
-- Custom domain `ai-tax.soonkeong.dev` (override with `CUSTOM_DOMAIN_NAME` /
-  `CERTIFICATE_ARN` env vars at synth)
+- Custom domain on the distribution, set at synth with `CUSTOM_DOMAIN_NAME`
+  and `CERTIFICATE_ARN` (an ACM certificate in us-east-1)
 
 ## Deploying
 
@@ -28,6 +28,7 @@ npm ci
 ANTHROPIC_API_KEY=... OPENAI_API_KEY=... \
 RAG_SERVICE_URL=... RAG_SERVICE_TOKEN=... \
 UPSTASH_REDIS_REST_URL=... UPSTASH_REDIS_REST_TOKEN=... \
+CUSTOM_DOMAIN_NAME=... CERTIFICATE_ARN=... \
 npx cdk deploy
 ```
 
