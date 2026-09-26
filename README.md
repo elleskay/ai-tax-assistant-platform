@@ -352,7 +352,7 @@ Claude models fall back to GPT-4o mini and GPT models to Claude Haiku 4.5. A fai
 flowchart LR
   U(["Officer browser"])
   subgraph aws["AWS, stack IrasTaxServerless"]
-    CF["CloudFront<br/>ai-tax.soonkeong.dev"]
+    CF["CloudFront<br/>custom domain"]
     SF["Server Lambda<br/>OpenNext, Node 22<br/>streaming, 60 s"]
     IF["Image Lambda"]
     AB[("Assets bucket")]
@@ -378,7 +378,7 @@ flowchart LR
 
 | Node | Runs | Notes |
 |---|---|---|
-| CloudFront | Custom domain `ai-tax.soonkeong.dev` (ACM certificate in us-east-1, DNS by CNAME) | Server responses are not cached; static paths go to S3; price class 200 |
+| CloudFront | Custom domain from `CUSTOM_DOMAIN_NAME` and `CERTIFICATE_ARN` at synth (ACM certificate in us-east-1, DNS by CNAME) | Server responses are not cached; static paths go to S3; price class 200 |
 | Server Lambda | The OpenNext server bundle | 1024 MB, response-streaming Function URL, 60 s timeout, environment baked at synth |
 | Image Lambda | OpenNext image optimisation | |
 | Assets bucket | `/_next/static` and every `public/` file, including `insights.json` and `robots.txt` | Routed by the construct at synth |
