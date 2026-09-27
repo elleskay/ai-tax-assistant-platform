@@ -23,6 +23,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AI Tax Assistant Platform",
   description: "One governed AI assistant per department.",
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({
